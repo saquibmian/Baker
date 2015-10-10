@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		386934D91BC8CC5200B24A5C /* Json.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934D81BC8CC5200B24A5C /* Json.swift */; settings = {ASSET_TAGS = (); }; };
 		CE9B207C1A68E433003DD00E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9B207B1A68E433003DD00E /* AppDelegate.swift */; };
 		CE9B20801A68E433003DD00E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CE9B207F1A68E433003DD00E /* Images.xcassets */; };
 		CE9B20831A68E433003DD00E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CE9B20811A68E433003DD00E /* Main.storyboard */; };
@@ -28,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		386934D81BC8CC5200B24A5C /* Json.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Json.swift; sourceTree = "<group>"; };
 		CE9B20761A68E433003DD00E /* SwiftCGI Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SwiftCGI Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE9B207A1A68E433003DD00E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CE9B207B1A68E433003DD00E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 			children = (
 				E99E538D1AB7B06100810B12 /* Root.swift */,
 				E99E53901AB7B2EC00810B12 /* Blog.swift */,
+				386934D81BC8CC5200B24A5C /* Json.swift */,
 			);
 			name = Handlers;
 			sourceTree = "<group>";
@@ -232,6 +235,7 @@
 				E99E53911AB7B2EC00810B12 /* Blog.swift in Sources */,
 				E99E538E1AB7B06100810B12 /* Root.swift in Sources */,
 				CE9B207C1A68E433003DD00E /* AppDelegate.swift in Sources */,
+				386934D91BC8CC5200B24A5C /* Json.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

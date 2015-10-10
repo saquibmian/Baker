@@ -24,5 +24,5 @@ let rootHandler: RequestHandler = { request in
         sessionManager.setData(sessionData)
     }
     
-    return HTTPResponse(status: .OK, contentType: .TextPlain, body: "안녕하세요\(extraGreeting), Swifter! The time is now \(NSDate())")
+    return HttpResponse(status: HttpStatusCode.OK, contentType: HttpContentType.TextPlain, body: "안녕하세요\(extraGreeting), Swifter! The time is now \(NSDate())")
 }

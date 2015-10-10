@@ -47,7 +47,7 @@ public class RequestSessionManager<T: SessionManager> {
     let sessionID: SessionID
     let sessionManager: SessionManager
     
-    public init?(request: Request) {
+    public init?(request: HttpRequest) {
         self.sessionManager = T.sharedInstance()
         
         if let id = request.sessionID {

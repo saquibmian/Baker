@@ -32,29 +32,22 @@ let FCGIRecordHeaderLength: UInt = 8
 let FCGITimeout: NSTimeInterval = 5
 
 // TODO: this should probably be a struct...
-public class FCGIRequest {
+internal class FCGIRequest {
     let record: BeginRequestRecord
     let keepConnection: Bool
     
-    var _params: RequestParams!  // Set externally and never reset to nil thereafter
-    public var params: RequestParams { return _params } // Accessor for code outside the framework
+    internal var params: [String: String] = [:]
     
-    private var _cookies: [String: String]?
+    internal let socket: GCDAsyncSocket
+    internal var streamData: NSMutableData?
     
-    public var socket: GCDAsyncSocket?     // Set externally by the server
-    public var streamData: NSMutableData?
-    
-    init(record: BeginRequestRecord) {
+    init(record: BeginRequestRecord, fromSocket: GCDAsyncSocket) {
         self.record = record
+        self.socket = fromSocket
         keepConnection = record.flags?.contains(.KeepConnection) ?? false
     }
     
     func writeResponseData(data: NSData, toStream stream: FCGIOutputStream) -> Bool {
-        guard let sock = socket else {
-            NSLog("ERROR: No socket for request")
-            return false
-        }
-        
         guard let streamType = FCGIRecordType(rawValue: stream.rawValue) else {
             NSLog("ERROR: invalid stream type")
             return false
@@ -67,7 +60,7 @@ public class FCGIRequest {
             outRecord.setRawData(chunk)
             
             outRecord.type = streamType
-            sock.writeData(outRecord.fcgiPacketData, withTimeout: FCGITimeout, tag: 0)
+            socket.writeData(outRecord.fcgiPacketData, withTimeout: FCGITimeout, tag: 0)
             
             // Remove the data we just sent from the buffer
             remainingData.replaceBytesInRange(NSMakeRange(0, chunk.length), withBytes: nil, length: 0)
@@ -75,66 +68,73 @@ public class FCGIRequest {
         
         let termRecord = ByteStreamRecord(version: record.version, requestID: record.requestID, contentLength: 0, paddingLength: 0)
         termRecord.type = streamType
-        sock.writeData(termRecord.fcgiPacketData, withTimeout: FCGITimeout, tag: 0)
+        socket.writeData(termRecord.fcgiPacketData, withTimeout: FCGITimeout, tag: 0)
         
         return true
     }
     
     // FCGI-specific implementation
     private func finishWithProtocolStatus(protocolStatus: FCGIProtocolStatus, andApplicationStatus applicationStatus: FCGIApplicationStatus) -> Bool {
-        guard let sock = socket else {
-            NSLog("ERROR: No socket for request")
-            return false
-        }
-        
         let outRecord = EndRequestRecord(version: record.version, requestID: record.requestID, paddingLength: 0, protocolStatus: protocolStatus, applicationStatus: applicationStatus)
-        sock.writeData(outRecord.fcgiPacketData, withTimeout: 5, tag: 0)
+        socket.writeData(outRecord.fcgiPacketData, withTimeout: 5, tag: 0)
         
         if keepConnection {
-            sock.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketTag.AwaitingHeaderTag.rawValue)
+            socket.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketTag.AwaitingHeaderTag.rawValue)
         } else {
-            sock.disconnectAfterWriting()
+            socket.disconnectAfterWriting()
         }
         
         return true
     }
     
-}
-
-extension FCGIRequest: Request {
     
-    public var path: String {
+    internal var path: String {
         guard let uri = params["REQUEST_URI"] else {
-            fatalError("Encountered reques that was missing a path")
+            fatalError("Encountered request that was missing a path")
         }
+        
+        if let queryStringStart = uri.rangeOfString("?") {
+            return uri[uri.startIndex..<queryStringStart.startIndex]
+        }
+        
         return uri
     }
     
-    public func finish(status: RequestCompletionStatus) {
-        switch status {
-        case .Complete:
-            finishWithProtocolStatus(.RequestComplete, andApplicationStatus: 0)
+    internal var queryString: String? {
+        if let queryString = params["QUERY_STRING"] {
+            return queryString
         }
+        return nil
     }
     
-    public var cookies: [String: String]? {
-        get {
-            if _cookies == nil {
-                if let cookieString = params["HTTP_COOKIE"] {
-                    var result: [String: String] = [:]
-                    let cookieDefinitions = cookieString.componentsSeparatedByString("; ")
-                    for cookie in cookieDefinitions {
-                        let cookieDef = cookie.componentsSeparatedByString("=")
-                        result[cookieDef[0]] = cookieDef[1]
-                    }
-                    _cookies = result
-                }
+    internal func finish() {
+        finishWithProtocolStatus(.RequestComplete, andApplicationStatus: 0)
+    }
+    
+    // TODO: move this one level up
+    internal var cookies: [String: String]? {
+        if let cookieString = params["HTTP_COOKIE"] {
+            var result: [String: String] = [:]
+            for cookie in cookieString.componentsSeparatedByString("; ") {
+                let cookieDef = cookie.componentsSeparatedByString("=")
+                result[cookieDef[0]] = cookieDef[1]
             }
-            return _cookies
+            return result
         }
-        set {
-            _cookies = newValue
+        return nil
+    }
+    
+    // TODO: move this one level up
+    internal var queryParameters: [String: String]? {
+        if let queryString = self.queryString {
+            var result: [String: String] = [:]
+            for item in queryString.componentsSeparatedByString("&") {
+                let itemDef = item.componentsSeparatedByString("=")
+                result[itemDef[0]] = itemDef[1]
+            }
+            return result
         }
+        return nil
     }
     
 }

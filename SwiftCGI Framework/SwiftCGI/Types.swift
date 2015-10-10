@@ -30,10 +30,6 @@
 
 // MARK: Request/response lifecycle
 
-public typealias RequestParams = [String: String]
-public typealias RequestHandler = Request -> HTTPResponse?
-
-
 //
 // Preware:    Invoked BEFORE the request is handled or a response is generated.
 //             Preware returns an (optionally modified) FCGIRequest; use preware
@@ -47,9 +43,12 @@ public typealias RequestHandler = Request -> HTTPResponse?
 
 // TODO: Make these Request instances generic once Swift sees the light and lets us do generic
 // typeclasses
-public typealias RequestPrewareHandler = Request -> Request
-public typealias RequestMiddlewareHandler = (Request, HTTPResponse) -> HTTPResponse
-public typealias RequestPostwareHandler = (Request, HTTPResponse?) -> Void
+public typealias RequestHandler = HttpRequest -> WebResponse
+public typealias BetterRequestHandler = WebRequest -> WebResponse
+
+public typealias RequestPrewareHandler = HttpRequest throws -> HttpRequest
+public typealias RequestMiddlewareHandler = (HttpRequest, WebResponse) throws -> WebResponse
+public typealias RequestPostwareHandler = (HttpRequest, WebResponse) throws -> Void
 
 
 // MARK: Low-level stuff

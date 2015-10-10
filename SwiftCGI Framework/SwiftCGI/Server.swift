@@ -38,9 +38,8 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
     // MARK: Properties
     
     public let port: UInt16
-    public var paramsAvailableHandler: (Request -> Void)?
+    internal var paramsAvailableHandler: (FCGIRequest -> Void)?
     public var requestRouter: Router
-//    public var requestHandler: FCGIRequestHandler
     
     let delegateQueue: dispatch_queue_t
     var recordContext: [GCDAsyncSocket: FCGIRecord] = [:]
@@ -83,8 +82,7 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
         // we have covered all cases
         switch record.type {
         case .BeginRequest:
-            let request = FCGIRequest(record: record as! BeginRequestRecord)
-            request.socket = socket
+            let request = FCGIRequest(record: record as! BeginRequestRecord, fromSocket: socket)
             
             objc_sync_enter(currentRequests)
             currentRequests[globalRequestID] = request
@@ -98,13 +96,9 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
             
             if let request = maybeRequest {
                 if let params = (record as! ParamsRecord).params {
-                    if request._params == nil {
-                        request._params = [:]
-                    }
-                    
                     // Copy the values into the request params dictionary
                     for key in params.keys {
-                        request._params[key] = params[key]
+                        request.params[key] = params[key]
                     }
                 } else {
                     paramsAvailableHandler?(request)
@@ -117,7 +111,7 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
             let maybeRequest = currentRequests[globalRequestID]
             objc_sync_exit(currentRequests)
             
-            if var request = maybeRequest {
+            if let request = maybeRequest {
                 if request.streamData == nil {
                     request.streamData = NSMutableData(capacity: 65536)
                 }
@@ -125,39 +119,54 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
                 if let recordData = (record as! ByteStreamRecord).rawData {
                     request.streamData!.appendData(recordData)
                 } else {
-                    // TODO: Future - when Swift gets exception handling, wrap this
-                    // TODO: Refactor this into a separate method
-                    for handler in registeredPreware {
-                        request = handler(request) as! FCGIRequest  // Because we can't correctly force compiler type checking without generic typealiases
-                    }
+                    if var httpRequest = HttpRequest(fromFastCgiRequest: request) {
+                        
+                        print(httpRequest.headers)
                     
-                    if let requestHandler = requestRouter.route(request.path) {
-                        if var response = requestHandler(request) {
-                            for handler in registeredMiddleware {
-                                response = handler(request, response)
+                        do {
+                            // TODO: Future - when Swift gets exception handling, wrap this
+                            // TODO: Refactor this into a separate method
+                            for handler in registeredPreware {
+                                httpRequest = try handler(httpRequest)
                             }
                             
-                            if let responseData = response.responseData {
+                            if let requestHandler = requestRouter.route(request.path) {
+                                var response = requestHandler(httpRequest)
+                                for handler in registeredMiddleware {
+                                    response = try handler(httpRequest, response)
+                                }
+                                
+                                let responseWriter = HttpResponseSerializer()
+                                if let responseData = responseWriter.serialize(response: try response.render()) {
+                                    request.writeResponseData(responseData, toStream: FCGIOutputStream.Stdout)
+                                }
+                                
+                                for handler in registeredPostware {
+                                    try handler(httpRequest, response)
+                                }
+                            } else {
+                                let response = HttpResponse(status: HttpStatusCode.NotFound, contentType: HttpContentType.TextPlain, body: "Not found! Booooo :( ")
+                                
+                                let responseWriter = HttpResponseSerializer()
+                                if let responseData = responseWriter.serialize(response: response) {
+                                    request.writeResponseData(responseData, toStream: FCGIOutputStream.Stdout)
+                                }
+                                
+                            }
+                        } catch {
+                            let response = try! JsonResponse(model: ["error":"none"], statusCode: HttpStatusCode.InternalServerError)!.render()
+                            
+                            let responseWriter = HttpResponseSerializer()
+                            if let responseData = responseWriter.serialize(response: response) {
                                 request.writeResponseData(responseData, toStream: FCGIOutputStream.Stdout)
                             }
-                            
-                            request.finish(.Complete)
-                            
-                            for handler in registeredPostware {
-                                handler(request, response)
-                            }
-                        } else {
-                            request.finish(.Complete)
-                            
-                            for handler in registeredPostware {
-                                handler(request, nil)
-                            }
                         }
+                        
                     }
                     
-                    if let sock = request.socket {
-                        recordContext[sock] = nil
-                    }
+                    request.finish()
+                    
+                    recordContext[socket] = nil
                     
                     objc_sync_enter(currentRequests)
                     currentRequests.removeValueForKey(globalRequestID)

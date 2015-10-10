@@ -35,7 +35,7 @@ import SwiftCGISessions
 class AppDelegate: NSObject, NSApplicationDelegate {
     
     // UI junk. Because Cocoa app...
-    let statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(-1) // workaround for a linker bug that prevents use of the proper constants
+    let statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(NSVariableStatusItemLength) // workaround for a linker bug that prevents use of the proper constants
     
     var server: FCGIServer!
     
@@ -44,15 +44,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // TODO: Clean up this kludge
         // NOTE: You should change the root path to match your server configuration
-        let rootRouter = Router(path: "cgi", handleWildcardChildren: true, withHandler: rootHandler)
+        let rootRouter = Router(path: "root", handleWildcardChildren: true, withHandler: rootHandler)
         
         let blogRouter = Router(path: "blog", handleWildcardChildren: true, withHandler: blogRootHandler)
         rootRouter.attachRouter(blogRouter)
         
-        server = FCGIServer(port: 9000, requestRouter: rootRouter)
+        let jsonRouter = Router(path: "json", handleWildcardChildren: false, withHandler: jsonRootHandler )
+        rootRouter.attachRouter(jsonRouter)
+        
+        server = FCGIServer(port: 9081, requestRouter: rootRouter)
         
         // Set up middleware
         server.registerMiddlewareHandler(sessionMiddlewareHandler)
+        
+        server.registerPrewareHandler { req in
+            let method = req.method.rawValue
+            let path = req.path
+            print("\(method) \(path)")
+            
+            return req;
+        }
         
         do {
             try server.start()

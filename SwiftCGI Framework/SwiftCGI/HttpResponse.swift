@@ -1,6 +1,6 @@
 //
-//  Extensions.swift
-//  SwifftCGI Sessions
+//  HTTPResponseHelpers.swift
+//  SwiftCGI
 //
 //  Copyright (c) 2014, Ian Wagner
 //  All rights reserved.
@@ -28,41 +28,45 @@
 //  POSSIBILITY OF SUCH DAMAGE.
 //
 
-import Foundation
-import SwiftCGI
-
-
-let SessionIDCookieName = "sessionid"
-
-// Extension to implement session handling properties on Request
-public extension HttpRequest {
-    public var sessionID: String? { return cookies[SessionIDCookieName] }
+public struct HttpResponse {
     
-    public mutating func generateSessionID() {
-        if sessionID == nil {
-            self.cookies[SessionIDCookieName] = NSUUID().UUIDString
-        } else {
-            fatalError("Attempted to generate a session ID for a request that already has a session ID")
+    public var status: HttpStatusCode
+    public var contentType: String
+    public var contentLength: Int { return body.utf8.count }
+    public var cookies: [String:String]?
+    public var headers: [String:String] = [:]
+    public var body: String
+    
+
+    // MARK: Init
+    public init(status: HttpStatusCode, contentType: String, body: String) {
+        self.status = status
+        self.body = body
+        self.contentType = contentType
+    }
+    
+    public init(body: String) {
+        status = .OK
+        self.body = body
+        contentType = HttpContentType.TextPlain
+    }
+    
+    public mutating func setValue(value: String, forHeader header: String ) {
+        if header == HttpHeader.ContentLength {
+            // TODO throw error
         }
+        if header == HttpHeader.ContentType {
+            // TODO throw error
+        }
+        headers[header] = value
     }
     
-    public func getSessionManager<T: SessionManager>() -> RequestSessionManager<T>? {
-        return RequestSessionManager<T>(request: self)
-    }
-}
-
-
-// Define a handler function to modify the response accordingly
-public func sessionMiddlewareHandler(var request: HttpRequest, var response: WebResponse) throws -> WebResponse {
-    // Add the session cookie if necessary
-    if request.sessionID == nil {
-        request.generateSessionID()
+    public mutating func setValue(value: String, forCookie key: String) {
+        if cookies == nil {
+            cookies = [:]
+        }
+        
+        cookies![key] = value
     }
     
-    var httpResponse = try response.render()
-    if let sessionID = request.sessionID {
-        httpResponse.setValue("\(sessionID); Max-Age=86400", forCookie: SessionIDCookieName)
-    }
-    
-    return httpResponse
 }
