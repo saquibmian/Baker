@@ -43,8 +43,8 @@
 
 // TODO: Make these Request instances generic once Swift sees the light and lets us do generic
 // typeclasses
-public typealias RequestHandler = HttpRequest -> WebResponse
-public typealias BetterRequestHandler = WebRequest -> WebResponse
+
+public typealias RequestHandler = WebRequest -> WebResponse
 
 public typealias RequestPrewareHandler = HttpRequest throws -> HttpRequest
 public typealias RequestMiddlewareHandler = (HttpRequest, WebResponse) throws -> WebResponse

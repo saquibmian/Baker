@@ -130,7 +130,7 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
                                 httpRequest = try handler(httpRequest)
                             }
                             
-                            if let requestHandler = requestRouter.route(request.path) {
+                            if let requestHandler = requestRouter.routeRequest(httpRequest) {
                                 var response = requestHandler(httpRequest)
                                 for handler in registeredMiddleware {
                                     response = try handler(httpRequest, response)

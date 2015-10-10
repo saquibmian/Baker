@@ -44,15 +44,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // TODO: Clean up this kludge
         // NOTE: You should change the root path to match your server configuration
-        let rootRouter = Router(path: "root", handleWildcardChildren: true, withHandler: rootHandler)
+//        let rootRouter = Router(path: "root", handleWildcardChildren: true, withHandler: rootHandler)
+//        
+//        let blogRouter = Router(path: "blog", handleWildcardChildren: true, withHandler: blogRootHandler)
+//        rootRouter.attachRouter(blogRouter)
+//        
+//        let jsonRouter = Router(path: "json", handleWildcardChildren: false, withHandler: jsonRootHandler )
+//        rootRouter.attachRouter(jsonRouter)
         
-        let blogRouter = Router(path: "blog", handleWildcardChildren: true, withHandler: blogRootHandler)
-        rootRouter.attachRouter(blogRouter)
+        let betterRouter = Router()
+        betterRouter.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
+        betterRouter.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
+        betterRouter.mapRoute("/root/json/", toController: JsonController() )
         
-        let jsonRouter = Router(path: "json", handleWildcardChildren: false, withHandler: jsonRootHandler )
-        rootRouter.attachRouter(jsonRouter)
-        
-        server = FCGIServer(port: 9081, requestRouter: rootRouter)
+        server = FCGIServer(port: 9081, requestRouter: betterRouter)
         
         // Set up middleware
         server.registerMiddlewareHandler(sessionMiddlewareHandler)

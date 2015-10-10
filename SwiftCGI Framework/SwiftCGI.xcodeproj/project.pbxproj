@@ -12,6 +12,8 @@
 		386934D71BC8C64200B24A5C /* HttpCookieHeadersBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934D61BC8C64200B24A5C /* HttpCookieHeadersBuilder.swift */; settings = {ASSET_TAGS = (); }; };
 		386934DB1BC8DDDE00B24A5C /* WebResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934DA1BC8DDDE00B24A5C /* WebResponse.swift */; settings = {ASSET_TAGS = (); }; };
 		386934DD1BC8DDFD00B24A5C /* JsonResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934DC1BC8DDFD00B24A5C /* JsonResponse.swift */; settings = {ASSET_TAGS = (); }; };
+		386934DF1BC8FF2C00B24A5C /* WebController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934DE1BC8FF2C00B24A5C /* WebController.swift */; settings = {ASSET_TAGS = (); }; };
+		386934E11BC8FF4C00B24A5C /* WebRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934E01BC8FF4C00B24A5C /* WebRequest.swift */; settings = {ASSET_TAGS = (); }; };
 		CE052E3A1A5CBAAB00F8DA34 /* UIntExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE052E391A5CBAAB00F8DA34 /* UIntExtensions.swift */; };
 		CE052E3B1A5CBE1B00F8DA34 /* UIntExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE052E391A5CBAAB00F8DA34 /* UIntExtensions.swift */; };
 		CE052E3C1A5CC17100F8DA34 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEBFD711A5A20590014D017 /* Types.swift */; };
@@ -52,6 +54,8 @@
 		386934D61BC8C64200B24A5C /* HttpCookieHeadersBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpCookieHeadersBuilder.swift; sourceTree = "<group>"; };
 		386934DA1BC8DDDE00B24A5C /* WebResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebResponse.swift; sourceTree = "<group>"; };
 		386934DC1BC8DDFD00B24A5C /* JsonResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JsonResponse.swift; sourceTree = "<group>"; };
+		386934DE1BC8FF2C00B24A5C /* WebController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebController.swift; sourceTree = "<group>"; };
+		386934E01BC8FF4C00B24A5C /* WebRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebRequest.swift; sourceTree = "<group>"; };
 		CE052E391A5CBAAB00F8DA34 /* UIntExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIntExtensions.swift; sourceTree = "<group>"; };
 		CE052E3F1A5CF85500F8DA34 /* HttpResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpResponse.swift; sourceTree = "<group>"; };
 		CE7DFA7E1A5B6AE200221B93 /* Server.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Server.swift; sourceTree = "<group>"; };
@@ -121,14 +125,16 @@
 				CE052E3F1A5CF85500F8DA34 /* HttpResponse.swift */,
 				386934D41BC8C57B00B24A5C /* HttpResponseSerializer.swift */,
 				386934D21BC8A4B700B24A5C /* HttpStructures.swift */,
+				386934DC1BC8DDFD00B24A5C /* JsonResponse.swift */,
 				E99E5FDE1AA2D8B600BED31D /* Router.swift */,
 				CE7DFA7E1A5B6AE200221B93 /* Server.swift */,
 				CEEBFD2E1A5A1D420014D017 /* Supporting Files */,
 				CEEBFD301A5A1D420014D017 /* SwiftCGI.h */,
 				CEEBFD711A5A20590014D017 /* Types.swift */,
 				CE052E391A5CBAAB00F8DA34 /* UIntExtensions.swift */,
+				386934DE1BC8FF2C00B24A5C /* WebController.swift */,
+				386934E01BC8FF4C00B24A5C /* WebRequest.swift */,
 				386934DA1BC8DDDE00B24A5C /* WebResponse.swift */,
-				386934DC1BC8DDFD00B24A5C /* JsonResponse.swift */,
 			);
 			path = SwiftCGI;
 			sourceTree = "<group>";
@@ -282,6 +288,8 @@
 			files = (
 				CE7DFA7F1A5B6AE200221B93 /* Server.swift in Sources */,
 				CE052E401A5CF85500F8DA34 /* HttpResponse.swift in Sources */,
+				386934E11BC8FF4C00B24A5C /* WebRequest.swift in Sources */,
+				386934DF1BC8FF2C00B24A5C /* WebController.swift in Sources */,
 				E99E5FDF1AA2D8B600BED31D /* Router.swift in Sources */,
 				CEEBFD891A5A591F0014D017 /* GCDAsyncSocket.m in Sources */,
 				386934D51BC8C57B00B24A5C /* HttpResponseSerializer.swift in Sources */,

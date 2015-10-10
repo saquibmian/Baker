@@ -15,3 +15,9 @@ extension HttpResponse : WebResponse {
         return self
     }
 }
+
+public extension WebResponse {
+    public static func notFound() -> WebResponse  {
+        return HttpResponse(status: HttpStatusCode.NotFound, contentType: HttpContentType.TextPlain, body: "Not found!")
+    }
+}

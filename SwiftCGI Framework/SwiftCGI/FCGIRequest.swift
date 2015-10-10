@@ -89,20 +89,27 @@ internal class FCGIRequest {
     
     
     internal var path: String {
-        guard let uri = params["REQUEST_URI"] else {
-            fatalError("Encountered request that was missing a path")
+        if var uri = params["REQUEST_URI"] {
+            if let queryStringStart = uri.rangeOfString("?") {
+                uri = uri[uri.startIndex..<queryStringStart.startIndex]
+            }
+            
+            // trim the trailing "/"
+            if uri[uri.endIndex.predecessor()] == "/" {
+                uri = uri[uri.startIndex..<uri.endIndex.predecessor()]
+            }
+            
+            return uri
         }
         
-        if let queryStringStart = uri.rangeOfString("?") {
-            return uri[uri.startIndex..<queryStringStart.startIndex]
-        }
-        
-        return uri
+        fatalError("Encountered request that was missing a path")
     }
     
     internal var queryString: String? {
         if let queryString = params["QUERY_STRING"] {
-            return queryString
+            if queryString != "" {
+                return queryString
+            }
         }
         return nil
     }

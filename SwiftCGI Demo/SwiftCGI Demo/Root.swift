@@ -12,7 +12,7 @@ import SwiftCGISessions
 
 let rootHandler: RequestHandler = { request in
     var extraGreeting = ""
-    if let sessionManager = request.getSessionManager() as RequestSessionManager<TransientMemorySessionManager>? {
+    if let sessionManager = request.httpRequest.getSessionManager() as RequestSessionManager<TransientMemorySessionManager>? {
         var sessionData: SessionData = sessionManager.getData() ?? [:]
         
         if sessionData["visited"] == "true" {
