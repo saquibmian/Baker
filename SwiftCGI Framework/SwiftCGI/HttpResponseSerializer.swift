@@ -34,9 +34,7 @@ internal struct HttpResponseSerializer {
         headers.append(HTTPNewline)
         
         let responseString = headers.joinWithSeparator(HTTPNewline) + response.body
-        
-        print(responseString)
-                
+                        
         return responseString.dataUsingEncoding(primaryEncoding)
     }
 }
