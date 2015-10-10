@@ -29,29 +29,40 @@ public func ==(lhs: RoutePattern, rhs: RoutePattern) -> Bool {
 
 public class Router {
     
-    private var _routes: [(routePattern:RoutePattern, handler:RequestHandler)] = []
+    private var _routes: [(routePattern:RoutePattern, handler:() -> RequestHandler)] = []
     
     public init() {}
     
-    public func mapRoute(pattern: String, toController controller: Any) {
-        if let method = controller as? Getable {
-            self.mapRoute(pattern, forMethod: HttpMethod.Get, toAction: method.get)
+    public func mapRoute(pattern: String, toController controller: () -> Any) {
+        let instantiatedController = controller()
+
+        if let _ = instantiatedController as? Getable {
+            let action = { (controller() as! Getable).get }
+            self.mapRoute(pattern, forMethod: HttpMethod.Get, toAction: action)
         }
-        if let method = controller as? Putable {
-            self.mapRoute(pattern, forMethod: HttpMethod.Put, toAction: method.put)
+        if let _ = instantiatedController as? Putable {
+            let action = { (controller() as! Putable).put }
+            self.mapRoute(pattern, forMethod: HttpMethod.Put, toAction: action)
         }
-        if let method = controller as? Patchable {
-            self.mapRoute(pattern, forMethod: HttpMethod.Patch, toAction: method.patch)
+        if let _ = instantiatedController as? Patchable {
+            let action = { (controller() as! Patchable).patch }
+            self.mapRoute(pattern, forMethod: HttpMethod.Patch, toAction: action)
         }
-        if let method = controller as? Deletable {
-            self.mapRoute(pattern, forMethod: HttpMethod.Delete, toAction: method.delete)
+        if let _ = instantiatedController as? Deletable {
+            let action = { (controller() as! Deletable).delete }
+            self.mapRoute(pattern, forMethod: HttpMethod.Delete, toAction: action)
         }
-        if let method = controller as? Postable {
-            self.mapRoute(pattern, forMethod: HttpMethod.Post, toAction: method.post)
+        if let _ = instantiatedController as? Postable {
+            let action = { (controller() as! Postable).post }
+            self.mapRoute(pattern, forMethod: HttpMethod.Post, toAction: action)
         }
     }
     
-    public func mapRoute(var pattern: String, forMethod method: HttpMethod, toAction action: RequestHandler) {
+    public func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: RequestHandler) {
+        self.mapRoute(pattern, forMethod: method, toAction: { return action })
+    }
+    
+    func mapRoute(var pattern: String, forMethod method: HttpMethod, toAction action: () -> RequestHandler) {
         // trim the trailing "/"
         if pattern[pattern.endIndex.predecessor()] == "/" {
             pattern = pattern[pattern.startIndex..<pattern.endIndex.predecessor()]
@@ -59,12 +70,14 @@ public class Router {
         
         let routePattern = RoutePattern(route: pattern, forMethod: method)
         _routes.append(routePattern: routePattern, handler: action)
+        
+        print("Registered route: \(routePattern.method.rawValue) \(routePattern.route)")
     }
     
     func routeRequest(request: WebRequest) -> RequestHandler? {
         for (pattern, handler) in _routes where pattern.method == request.httpRequest.method  {
             if pattern.route == request.httpRequest.path {
-                return handler
+                return handler()
             }
         }
         

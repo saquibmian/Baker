@@ -120,9 +120,6 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
                     request.streamData!.appendData(recordData)
                 } else {
                     if var httpRequest = HttpRequest(fromFastCgiRequest: request) {
-                        
-                        print(httpRequest.headers)
-                    
                         do {
                             // TODO: Future - when Swift gets exception handling, wrap this
                             // TODO: Refactor this into a separate method

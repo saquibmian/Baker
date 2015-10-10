@@ -21,6 +21,10 @@ let jsonRootHandler: RequestHandler = { request in
 
 struct JsonController : Getable, Postable, Patchable {
     
+    init() {
+        print("initing json controller")
+    }
+    
     internal func get(request: WebRequest) -> WebResponse {
         var model = ["hello":"myfriend"]
         

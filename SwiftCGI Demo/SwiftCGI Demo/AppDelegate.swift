@@ -34,41 +34,27 @@ import SwiftCGISessions
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
     
-    // UI junk. Because Cocoa app...
-    let statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(NSVariableStatusItemLength) // workaround for a linker bug that prevents use of the proper constants
+    let statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(NSVariableStatusItemLength)
     
     var server: FCGIServer!
     
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        // Insert code here to initialize your application
+        let router = Router()
+        router.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
+        router.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
+        router.mapRoute("/root/json/", toController: { return JsonController() } )
         
-        // TODO: Clean up this kludge
-        // NOTE: You should change the root path to match your server configuration
-//        let rootRouter = Router(path: "root", handleWildcardChildren: true, withHandler: rootHandler)
-//        
-//        let blogRouter = Router(path: "blog", handleWildcardChildren: true, withHandler: blogRootHandler)
-//        rootRouter.attachRouter(blogRouter)
-//        
-//        let jsonRouter = Router(path: "json", handleWildcardChildren: false, withHandler: jsonRootHandler )
-//        rootRouter.attachRouter(jsonRouter)
+        server = FCGIServer(port: 9081, requestRouter: router)
         
-        let betterRouter = Router()
-        betterRouter.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
-        betterRouter.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
-        betterRouter.mapRoute("/root/json/", toController: JsonController() )
-        
-        server = FCGIServer(port: 9081, requestRouter: betterRouter)
-        
-        // Set up middleware
-        server.registerMiddlewareHandler(sessionMiddlewareHandler)
-        
-        server.registerPrewareHandler { req in
+        server.registerPrewareHandler { (req) -> HttpRequest in
             let method = req.method.rawValue
             let path = req.path
             print("\(method) \(path)")
             
             return req;
         }
+
+        server.registerMiddlewareHandler(sessionMiddlewareHandler)
         
         do {
             try server.start()
@@ -78,18 +64,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             exit(1)
         }
         
-        // Set ourselves up in the status bar (top of the screen)
         statusItem.title = "SwiftCGI"   // TODO: Use a logo
-        
         let menu = NSMenu()
-        menu.addItemWithTitle("Kill Server", action: Selector("killServer:"), keyEquivalent: "")
-        
+        menu.addItemWithTitle("Stop Server", action: Selector("killServer:"), keyEquivalent: "")
         statusItem.menu = menu
     }
 
-    func applicationWillTerminate(aNotification: NSNotification) {
-        // Insert code here to tear down your application
-    }
+    func applicationWillTerminate(aNotification: NSNotification) { }
 
     func killServer(sender: AnyObject!) {
         NSApplication.sharedApplication().terminate(sender)

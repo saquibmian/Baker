@@ -26,7 +26,7 @@ public struct HttpRequest {
         if let parsedMethod = HttpMethod(rawValue: methodString.uppercaseString) {
             method = parsedMethod
         } else {
-            // TODO the HEAD method doesn't show up in the params, so we come here
+            // TODO: the HEAD method doesn't show up in the params, so we come here
             return nil
         }
         
