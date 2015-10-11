@@ -94,7 +94,7 @@ public class Router : _RouteMatchable {
                 var handler = handlerBuilder()
                 
                 // handle nested routers
-                while let router = match.route as? Router {
+                while let router = match.target as? Router {
                     // avoid double testing
                     if router.route != self.route {
                         if let intermediaryMatch = router.routeRequest(request) {
@@ -117,6 +117,25 @@ public class Router : _RouteMatchable {
     
     func respondsToMethod(method: HttpMethod) -> Bool {
         return true
+    }
+}
+
+internal struct RoutePattern : _RouteMatchable {
+    let route: String
+    internal let method: HttpMethod
+    internal let routeComponents: [String]
+    
+    init(route: String, forMethod method: HttpMethod) {
+        self.route = route
+        self.method = method
+        
+        self.routeComponents = self.route
+            .componentsSeparatedByString(RouteComponentSeparator)
+            .filter { !$0.isEmpty }
+    }
+    
+    internal func respondsToMethod(method: HttpMethod) -> Bool {
+        return self.method == method
     }
 }
 

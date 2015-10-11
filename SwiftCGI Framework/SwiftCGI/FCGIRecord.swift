@@ -111,28 +111,28 @@ class FCGIRecord {
 //    }
 //    
 //}
-
-// Begin request record
-class BeginRequestRecord: FCGIRecord {
-    var role: FCGIRequestRole?
-    var flags: FCGIRequestFlags?
-    
-    override var type: FCGIRecordType { return .BeginRequest }
-    
-    override func processContentData(data: NSData) {
-        let rawRole = data.readUInt16FromNetworkOrder(atIndex: 0)
-        
-        if let concreteRole = FCGIRequestRole(rawValue: rawRole) {
-            role = concreteRole
-            
-            var rawFlags: FCGIRequestFlags.RawValue = 0
-            data.getBytes(&rawFlags, range: NSMakeRange(2, 1))
-            flags = FCGIRequestFlags(rawValue: rawFlags)
-        } else {
-            print("can't handle role \(rawRole)")
-        }
-    }
-}
+//
+//// Begin request record
+//class BeginRequestRecord: FCGIRecord {
+//    var role: FCGIRequestRole?
+//    var flags: FCGIRequestFlags?
+//    
+//    override var type: FCGIRecordType { return .BeginRequest }
+//    
+//    override func processContentData(data: NSData) {
+//        let rawRole = data.readUInt16FromNetworkOrder(atIndex: 0)
+//        
+//        if let concreteRole = FCGIRequestRole(rawValue: rawRole) {
+//            role = concreteRole
+//            
+//            var rawFlags: FCGIRequestFlags.RawValue = 0
+//            data.getBytes(&rawFlags, range: NSMakeRange(2, 1))
+//            flags = FCGIRequestFlags(rawValue: rawFlags)
+//        } else {
+//            print("can't handle role \(rawRole)")
+//        }
+//    }
+//}
 
 // End request record
 class EndRequestRecord: FCGIRecord {
@@ -167,20 +167,25 @@ class EndRequestRecord: FCGIRecord {
         return result
     }
 }
-
+//
 // Data record
 class ByteStreamRecord: FCGIRecord {
     private var _rawData: NSData?
     var rawData: NSData? { return _rawData }
     
-    override var contentLength: FCGIContentLength { return FCGIContentLength(_rawData?.length ?? 0) }
+    override var contentLength: FCGIContentLength {
+        if super._initContentLength != 0 {
+            return super._initContentLength
+        }
+        return FCGIContentLength(_rawData?.length ?? 0)
+    }
     
     var _type: FCGIRecordType = .Stdin
     override var type: FCGIRecordType {
         get { return _type }
         set {
             switch newValue {
-            case .Stdin, .Stdout, .Stderr:
+            case .Stdin, .Stdout:
                 _type = newValue
             default:
                 fatalError("ByteStreamRecord.type can only be .Stdin .Stdout or .Stderr")
@@ -204,103 +209,108 @@ class ByteStreamRecord: FCGIRecord {
         _rawData = data
     }
 }
-
-// Params record
-class ParamsRecord: FCGIRecord {
-    // This stored property is an implicitly unwrapped optional so that we can
-    // call super.init early on in the init process to retrieve the content length
-    private var _params: [String: String]?
-    var params: [String: String]? { return _params }    // read-only accessor
-    
-    override var type: FCGIRecordType { return .Params }
-    
-    override func processContentData(data: NSData) {
-        var paramData: [String: String] = [:]
-        
-        //Remove Padding
-        let unpaddedData = data.subdataWithRange(NSMakeRange(0, Int(contentLength))).mutableCopy() as! NSMutableData
-        while unpaddedData.length > 0 {
-            var pos0 = 0, pos1 = 0, pos4 = 0
-            
-            var keyLengthB3 = 0, keyLengthB2 = 0, keyLengthB1 = 0, keyLengthB0 = 0
-            
-            var valueLengthB3 = 0, valueLengthB2 = 0, valueLengthB1 = 0, valueLengthB0 = 0
-            
-            var keyLength = 0, valueLength = 0
-            
-            unpaddedData.getBytes(&pos0, range: NSMakeRange(0, 1))
-            unpaddedData.getBytes(&pos1, range: NSMakeRange(1, 1))
-            unpaddedData.getBytes(&pos4, range: NSMakeRange(4, 1))
-            
-            if pos0 >> 7 == 0 {
-                keyLength = pos0
-                // NameValuePair11 or 14
-                if pos1 >> 7 == 0 {
-                    //NameValuePair11
-                    valueLength = pos1
-                    unpaddedData.replaceBytesInRange(NSMakeRange(0,2), withBytes: nil, length: 0)
-                } else {
-                    //NameValuePair14
-                    unpaddedData.getBytes(&valueLengthB3, range: NSMakeRange(1, 1))
-                    unpaddedData.getBytes(&valueLengthB2, range: NSMakeRange(2, 1))
-                    unpaddedData.getBytes(&valueLengthB1, range: NSMakeRange(3, 1))
-                    unpaddedData.getBytes(&valueLengthB0, range: NSMakeRange(4, 1))
-                    
-                    valueLength = ((valueLengthB3 & 0x7f) << 24) + (valueLengthB2 << 16) + (valueLengthB1 << 8) + valueLengthB0
-                    unpaddedData.replaceBytesInRange(NSMakeRange(0,5), withBytes: nil, length: 0)
-                }
-            } else {
-                // NameValuePair41 or 44
-                unpaddedData.getBytes(&keyLengthB3, range: NSMakeRange(0, 1))
-                unpaddedData.getBytes(&keyLengthB2, range: NSMakeRange(1, 1))
-                unpaddedData.getBytes(&keyLengthB1, range: NSMakeRange(2, 1))
-                unpaddedData.getBytes(&keyLengthB0, range: NSMakeRange(3, 1))
-                keyLength = ((keyLengthB3 & 0x7f) << 24) + (keyLengthB2 << 16) + (keyLengthB1 << 8) + keyLengthB0
-                
-                if (pos4 >> 7 == 0) {
-                    //NameValuePair41
-                    valueLength = pos4
-                    unpaddedData.replaceBytesInRange(NSMakeRange(0,5), withBytes: nil, length: 0)
-                } else {
-                    //NameValuePair44
-                    unpaddedData.getBytes(&valueLengthB3, range: NSMakeRange(4, 1))
-                    unpaddedData.getBytes(&valueLengthB2, range: NSMakeRange(5, 1))
-                    unpaddedData.getBytes(&valueLengthB1, range: NSMakeRange(6, 1))
-                    unpaddedData.getBytes(&valueLengthB0, range: NSMakeRange(7, 1))
-                    valueLength = ((valueLengthB3 & 0x7f) << 24) + (valueLengthB2 << 16) + (valueLengthB1 << 8) + valueLengthB0
-                    unpaddedData.replaceBytesInRange(NSMakeRange(0,8), withBytes: nil, length: 0)
-                    
-                }
-            }
-            
-            let key = NSString(data: unpaddedData.subdataWithRange(NSMakeRange(0,keyLength)), encoding: NSUTF8StringEncoding)
-            unpaddedData.replaceBytesInRange(NSMakeRange(0,keyLength), withBytes: nil, length: 0)
-            
-            let value = NSString(data: unpaddedData.subdataWithRange(NSMakeRange(0,valueLength)), encoding: NSUTF8StringEncoding)
-            unpaddedData.replaceBytesInRange(NSMakeRange(0,valueLength), withBytes: nil, length: 0)
-            
-            if let key = key as? String, value = value as? String {
-                paramData[key] = value
-            } else {
-                fatalError("Unable to decode key or value from content")  // non-decodable value
-            }
-        }
-        
-        if paramData.count > 0 {
-            _params = paramData
-        } else {
-            _params = nil
-        }
-    }
-}
+//
+//// Params record
+//class ParamsRecord: FCGIRecord {
+//    // This stored property is an implicitly unwrapped optional so that we can
+//    // call super.init early on in the init process to retrieve the content length
+//    private var _params: [String: String]?
+//    var params: [String: String]? { return _params }    // read-only accessor
+//    
+//    override var type: FCGIRecordType { return .Params }
+//    
+//    override func processContentData(data: NSData) {
+//        var paramData: [String: String] = [:]
+//        
+//        //Remove Padding
+//        let unpaddedData = data.subdataWithRange(NSMakeRange(0, Int(contentLength))).mutableCopy() as! NSMutableData
+//        while unpaddedData.length > 0 {
+//            var pos0 = 0, pos1 = 0, pos4 = 0
+//            
+//            var keyLengthB3 = 0, keyLengthB2 = 0, keyLengthB1 = 0, keyLengthB0 = 0
+//            
+//            var valueLengthB3 = 0, valueLengthB2 = 0, valueLengthB1 = 0, valueLengthB0 = 0
+//            
+//            var keyLength = 0, valueLength = 0
+//            
+//            unpaddedData.getBytes(&pos0, range: NSMakeRange(0, 1))
+//            unpaddedData.getBytes(&pos1, range: NSMakeRange(1, 1))
+//            unpaddedData.getBytes(&pos4, range: NSMakeRange(4, 1))
+//            
+//            if pos0 >> 7 == 0 {
+//                keyLength = pos0
+//                // NameValuePair11 or 14
+//                if pos1 >> 7 == 0 {
+//                    //NameValuePair11
+//                    valueLength = pos1
+//                    unpaddedData.replaceBytesInRange(NSMakeRange(0,2), withBytes: nil, length: 0)
+//                } else {
+//                    //NameValuePair14
+//                    unpaddedData.getBytes(&valueLengthB3, range: NSMakeRange(1, 1))
+//                    unpaddedData.getBytes(&valueLengthB2, range: NSMakeRange(2, 1))
+//                    unpaddedData.getBytes(&valueLengthB1, range: NSMakeRange(3, 1))
+//                    unpaddedData.getBytes(&valueLengthB0, range: NSMakeRange(4, 1))
+//                    
+//                    valueLength = ((valueLengthB3 & 0x7f) << 24) + (valueLengthB2 << 16) + (valueLengthB1 << 8) + valueLengthB0
+//                    unpaddedData.replaceBytesInRange(NSMakeRange(0,5), withBytes: nil, length: 0)
+//                }
+//            } else {
+//                // NameValuePair41 or 44
+//                unpaddedData.getBytes(&keyLengthB3, range: NSMakeRange(0, 1))
+//                unpaddedData.getBytes(&keyLengthB2, range: NSMakeRange(1, 1))
+//                unpaddedData.getBytes(&keyLengthB1, range: NSMakeRange(2, 1))
+//                unpaddedData.getBytes(&keyLengthB0, range: NSMakeRange(3, 1))
+//                keyLength = ((keyLengthB3 & 0x7f) << 24) + (keyLengthB2 << 16) + (keyLengthB1 << 8) + keyLengthB0
+//                
+//                if (pos4 >> 7 == 0) {
+//                    //NameValuePair41
+//                    valueLength = pos4
+//                    unpaddedData.replaceBytesInRange(NSMakeRange(0,5), withBytes: nil, length: 0)
+//                } else {
+//                    //NameValuePair44
+//                    unpaddedData.getBytes(&valueLengthB3, range: NSMakeRange(4, 1))
+//                    unpaddedData.getBytes(&valueLengthB2, range: NSMakeRange(5, 1))
+//                    unpaddedData.getBytes(&valueLengthB1, range: NSMakeRange(6, 1))
+//                    unpaddedData.getBytes(&valueLengthB0, range: NSMakeRange(7, 1))
+//                    valueLength = ((valueLengthB3 & 0x7f) << 24) + (valueLengthB2 << 16) + (valueLengthB1 << 8) + valueLengthB0
+//                    unpaddedData.replaceBytesInRange(NSMakeRange(0,8), withBytes: nil, length: 0)
+//                    
+//                }
+//            }
+//            
+//            let key = NSString(data: unpaddedData.subdataWithRange(NSMakeRange(0,keyLength)), encoding: NSUTF8StringEncoding)
+//            unpaddedData.replaceBytesInRange(NSMakeRange(0,keyLength), withBytes: nil, length: 0)
+//            
+//            let value = NSString(data: unpaddedData.subdataWithRange(NSMakeRange(0,valueLength)), encoding: NSUTF8StringEncoding)
+//            unpaddedData.replaceBytesInRange(NSMakeRange(0,valueLength), withBytes: nil, length: 0)
+//            
+//            if let key = key as? String, value = value as? String {
+//                paramData[key] = value
+//            } else {
+//                fatalError("Unable to decode key or value from content")  // non-decodable value
+//            }
+//        }
+//        
+//        if paramData.count > 0 {
+//            _params = paramData
+//        } else {
+//            _params = nil
+//        }
+//    }
+//}
 
 
 // MARK: Helper functions
 
 extension NSData {
+    func readUInt8(atIndex index: Int) -> UInt8 {
+        var toReturn: UInt8 = 0
+        self.getBytes(&toReturn, range: NSMakeRange(index, 1))
+        return toReturn
+    }
     func readUInt16FromNetworkOrder(atIndex index: Int) -> UInt16 {
         var bigUInt16: UInt16 = 0
-        self.getBytes(&bigUInt16, range: NSMakeRange(index, sizeof(UInt16)))
+        self.getBytes(&bigUInt16, range: NSMakeRange(index, 2))
         return UInt16(bigEndian: bigUInt16)
     }
 }
@@ -361,47 +371,47 @@ extension NSData {
 //        return nil
 //    }
 //}
-
-func createRecordFromHeaderData(data: NSData) -> FCGIRecord? {
-    // Check the length of the data
-    if data.length == Int(FCGIRecordHeaderLength) {
-        // Parse the version number
-        var rawVersion: FCGIVersion.RawValue = 0
-        data.getBytes(&rawVersion, range: NSMakeRange(0, 1))
-        
-        if let version = FCGIVersion(rawValue: rawVersion) {
-            // Check the version
-            switch version {
-            case .Version1:
-                // Parse the request type
-                var rawType: FCGIRecordType.RawValue = 0
-                data.getBytes(&rawType, range: NSMakeRange(1, 1))
-                
-                if let type = FCGIRecordType(rawValue: rawType) {
-                    // Parse the request ID
-                    let requestID = data.readUInt16FromNetworkOrder(atIndex: 2)
-                    
-                    // Parse the content length
-                    let contentLength = data.readUInt16FromNetworkOrder(atIndex: 4)
-                    
-                    // Parse the padding length
-                    var paddingLength: FCGIPaddingLength = 0
-                    data.getBytes(&paddingLength, range: NSMakeRange(6, 1))
-                    
-                    switch type {
-                    case .BeginRequest:
-                        return BeginRequestRecord(version: version, requestID: requestID, contentLength: contentLength, paddingLength: paddingLength)
-                    case .Params:
-                        return ParamsRecord(version: version, requestID: requestID, contentLength: contentLength, paddingLength: paddingLength)
-                    case .Stdin:
-                        return ByteStreamRecord(version: version, requestID: requestID, contentLength: contentLength, paddingLength: paddingLength)
-                    default:
-                        return nil
-                    }
-                }
-            }
-        }
-    }
-    
-    return nil
-}
+//
+//func createRecordFromHeaderData(data: NSData) -> FCGIRecord? {
+//    // Check the length of the data
+//    if data.length == Int(FCGIRecordHeaderLength) {
+//        // Parse the version number
+//        var rawVersion: FCGIVersion.RawValue = 0
+//        data.getBytes(&rawVersion, range: NSMakeRange(0, 1))
+//        
+//        if let version = FCGIVersion(rawValue: rawVersion) {
+//            // Check the version
+//            switch version {
+//            case .Version1:
+//                // Parse the request type
+//                var rawType: FCGIRecordType.RawValue = 0
+//                data.getBytes(&rawType, range: NSMakeRange(1, 1))
+//                
+//                if let type = FCGIRecordType(rawValue: rawType) {
+//                    // Parse the request ID
+//                    let requestID = data.readUInt16FromNetworkOrder(atIndex: 2)
+//                    
+//                    // Parse the content length
+//                    let contentLength = data.readUInt16FromNetworkOrder(atIndex: 4)
+//                    
+//                    // Parse the padding length
+//                    var paddingLength: FCGIPaddingLength = 0
+//                    data.getBytes(&paddingLength, range: NSMakeRange(6, 1))
+//                    
+//                    switch type {
+//                    case .BeginRequest:
+//                        return BeginRequestRecord(version: version, requestID: requestID, contentLength: contentLength, paddingLength: paddingLength)
+//                    case .Params:
+//                        return ParamsRecord(version: version, requestID: requestID, contentLength: contentLength, paddingLength: paddingLength)
+//                    case .Stdin:
+//                        return ByteStreamRecord(version: version, requestID: requestID, contentLength: contentLength, paddingLength: paddingLength)
+//                    default:
+//                        return nil
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    
+//    return nil
+//}

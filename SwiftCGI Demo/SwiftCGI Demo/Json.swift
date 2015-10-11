@@ -24,26 +24,69 @@ let jsonRootHandler: RequestHandler = { request in
 struct JsonController : Getable, Postable, Patchable {
     
     internal func get(request: WebRequest) -> WebResponse {
-        var model = ["hello":"myfriend"]
+        var model: [String:AnyObject] = ["hello":"myfriend"]
+        var temp: [String:String]
         
+        temp = [:]
+        for (key,value) in request.matchedRoute.parameters {
+            temp[key] = value
+        }
+        model["route-parameters"] = temp
+
+        temp = [:]
+        for (key,value) in request.parameters {
+            temp[key] = value
+        }
+        model["parameters"] = temp
+
+        temp = [:]
         if let qp = request.queryParameters {
             for (key,value) in qp {
-                model[key] = value
+                temp[key] = value
             }
         }
-        for (key,value) in request.matchedRoute.parameters {
-            model[key] = value
-        }
+        model["query-parameters"] = temp
         
         return JsonResponse(model: model )!
     }
 
     internal func post(request: WebRequest) -> WebResponse {
-        var model = ["hello":"myfriend"]
+        var model: [String:AnyObject] = ["hello":"myfriend"]
+        var temp: [String:String]
         
+        temp = [:]
+        for (key,value) in request.matchedRoute.parameters {
+            temp[key] = value
+        }
+        model["route-parameters"] = temp
+        
+        temp = [:]
+        for (key,value) in request.parameters {
+            temp[key] = value
+        }
+        model["parameters"] = temp
+
+        temp = [:]
+        for (key,value) in request.cookies {
+            temp[key] = value
+        }
+        model["cookies"] = temp
+        
+        temp = [:]
         if let qp = request.queryParameters {
             for (key,value) in qp {
-                model[key] = value
+                temp[key] = value
+            }
+        }
+        model["query-parameters"] = temp
+
+        if let content = request.content {
+            if let body = String(data: content.data, encoding: NSUTF8StringEncoding) {
+                temp = [:]
+                temp["data"] = body
+                temp["content-type"] = content.contentType
+                temp["content-length"] = "\(content.contentLength)"
+                model["content"] = temp
             }
         }
         

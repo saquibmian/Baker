@@ -36,7 +36,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     let statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(NSVariableStatusItemLength)
     
-    var server: FCGIServer!
+    var app: Application!
     
     private func mapRoutes(router: Router) {
         let root = router.createNestedRouter(atBaseRoute: "/root/")
@@ -48,19 +48,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        server = FCGIServer(port: 9081, configureRouter: mapRoutes)
+        app = Application(port: 9081, configureRouter: mapRoutes)
         
-        server.registerPrewareHandler { req in
+        app.registerPrewareHandler { req in
             let method = req.method.rawValue
             let path = req.url
             print("\(method) \(path)")
         }
 
-        server.registerMiddlewareHandler(sessionMiddlewareHandler)
+        app.registerMiddlewareHandler(sessionMiddlewareHandler)
         
         do {
-            try server.start()
-            print("Started SwiftCGI server on port \(server.port)")
+            try app.start()
+            print("Started SwiftCGI server on port \(app.port)")
         } catch {
             print("Failed to start SwiftCGI server")
             exit(1)

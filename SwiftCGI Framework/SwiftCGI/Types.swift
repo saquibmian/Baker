@@ -58,13 +58,13 @@ public typealias FCGIApplicationStatus = UInt32
 
 public enum FCGIOutputStream: UInt8 {
     case Stdout = 6
-    //case Stderr = 7
 }
 
 public enum FCGIProtocolStatus: UInt8 {
     case RequestComplete = 0
     //case FCGI_CANT_MPX_CONN = 1
     //case Overloaded = 2
+    case UnknownRole = 3
 }
 
 
@@ -73,10 +73,10 @@ public enum FCGIProtocolStatus: UInt8 {
 typealias FCGIRequestID = UInt16
 typealias FCGIContentLength = UInt16
 typealias FCGIPaddingLength = UInt8
-typealias FCGIShortNameLength = UInt8
-typealias FCGILongNameLength = UInt32
-typealias FCGIShortValueLength = UInt8
-typealias FCGILongValueLength = UInt32
+//typealias FCGIShortNameLength = UInt8
+//typealias FCGILongNameLength = UInt32
+//typealias FCGIShortValueLength = UInt8
+//typealias FCGILongValueLength = UInt32
 
 
 enum FCGIVersion: UInt8 {
@@ -85,25 +85,18 @@ enum FCGIVersion: UInt8 {
 
 enum FCGIRequestRole: UInt16 {
     case Responder = 1
-    //case Authorizer = 2
-    //case Filter = 3
 }
 
 enum FCGIRecordType: UInt8 {
     case BeginRequest = 1
-    //case AbortRequest = 2
     case EndRequest = 3
     case Params = 4
     case Stdin = 5
     case Stdout = 6
-    case Stderr = 7
-    //case Data = 8
-    //case GetValues = 9
-    //case GetValuesResult = 10
 }
 
 struct FCGIRequestFlags : OptionSetType {
-    typealias RawValue = UInt
+    typealias RawValue = UInt8
     let rawValue: RawValue
     
     init(rawValue value: RawValue) {

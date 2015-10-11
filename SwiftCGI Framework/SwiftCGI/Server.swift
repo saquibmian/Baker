@@ -28,90 +28,18 @@
 //  POSSIBILITY OF SUCH DAMAGE.
 //
 
-
-// MARK: Main server class
+public protocol HttpRequestDelegate {
+    func server(didReceiveHttpRequest httpRequest: HttpRequest)
+}
 
 // NOTE: This class muse inherit from NSObject; otherwise the Obj-C code for
 // GCDAsyncSocket will somehow not be able to store a reference to the delegate
 // (it will remain nil and no error will be logged).
+internal class FCGIServer: NSObject, GCDAsyncSocketDelegate {
 
-internal class HttpRequestProcessor {
-    
-    internal let _router: Router
-    private var _preware: [RequestPrewareHandler] = []
-    private var _middleware: [RequestMiddlewareHandler] = []
-    private var _postware: [RequestPostwareHandler] = []
-    
-    internal init(withRouter router: Router) {
-        _router = router
-    }
-    
-    func processHttpRequest(httpRequest: HttpRequest ) {
-        do {
-            let webRequest = WrappedHttpRequest(request: httpRequest, forMatchingRoute: nil)
-            for handler in _preware {
-                try handler(webRequest)
-            }
-            
-            if let requestHandler = _router.routeRequest(webRequest) {
-                webRequest.matchedRoute = requestHandler.routePattern
-                let response = requestHandler.handler(webRequest)
-                for handler in _middleware {
-                    try handler(webRequest, response)
-                }
-                
-                let responseWriter = HttpResponseSerializer()
-                if let responseData = responseWriter.serialize(response: try response.render()) {
-                    httpRequest._fastCgiRequest.writeResponseData(responseData, toStream: FCGIOutputStream.Stdout)
-                }
-                
-                for handler in _postware {
-                    try handler(webRequest, response)
-                }
-            } else {
-                let response = HttpResponse(status: HttpStatusCode.NotFound, content: HttpContent(contentType: HttpContentType.TextPlain, string: "Not found! Booooo :( ") )
-                
-                let responseWriter = HttpResponseSerializer()
-                if let responseData = responseWriter.serialize(response: response) {
-                    httpRequest._fastCgiRequest.writeResponseData(responseData, toStream: FCGIOutputStream.Stdout)
-                }
-                
-            }
-        } catch {
-            let response = try! JsonResponse(model: ["error":"none"], statusCode: HttpStatusCode.InternalServerError)!.render()
-            
-            let responseWriter = HttpResponseSerializer()
-            if let responseData = responseWriter.serialize(response: response) {
-                httpRequest._fastCgiRequest.writeResponseData(responseData, toStream: FCGIOutputStream.Stdout)
-            }
-        }
-    }
-    
-    // MARK: Pre/middle/postware registration
-    
-    internal func registerPrewareHandler(handler: RequestPrewareHandler) {
-        _preware.append(handler)
-    }
-    
-    internal func registerMiddlewareHandler(handler: RequestMiddlewareHandler) {
-        _middleware.append(handler)
-    }
-    
-    internal func registerPostwareHandler(handler: RequestPostwareHandler) {
-        _postware.append(handler)
-    }
-
-}
-
-public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
-
-    public let port: UInt16
-    internal var paramsAvailableHandler: (FCGIRequest -> Void)?
-    
-    private let _httpRequestProcessor: HttpRequestProcessor
-    private let _router: Router
-    
-    private var _recordContext: [GCDAsyncSocket: FCGIRecord] = [:]
+    private let _timeout: NSTimeInterval = 5
+    private let _port: UInt16
+    private var _recordContext: [GCDAsyncSocket: FCGIIncomingRecordType] = [:]
     private var _currentRequests: [String: FCGIRequest] = [:]
     private var _activeSockets: Set<GCDAsyncSocket> = []
     
@@ -120,121 +48,91 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
         GCDAsyncSocket(delegate: self, delegateQueue: self._delegateQueue)
     }()
 
-    // MARK: Init
-    
-    internal init(port: UInt16, requestRouter: Router) {
-        self.port = port
-        self._router = requestRouter
-        self._httpRequestProcessor = HttpRequestProcessor(withRouter: _router)
-        
+    internal var delegate: HttpRequestDelegate?
+
+    internal init(port: UInt16) {
+        self._port = port
         _delegateQueue = dispatch_queue_create("SocketAcceptQueue", DISPATCH_QUEUE_SERIAL)
     }
     
-    public convenience init(port: UInt16, configureRouter: Router -> Void ) {
-        self.init(port:port, requestRouter: Router() )
-        
-        configureRouter(self._router)
+    internal func start() throws {
+        try _listener.acceptOnPort(_port)
     }
     
-    
-    // MARK: Instance methods
-    
-    public func start() throws {
-        try _listener.acceptOnPort(port)
-    }
-    
-    func handleRecord(record: FCGIRecord, fromSocket socket: GCDAsyncSocket) {
-        let globalRequestID = "\(record.requestID)-\(socket.connectedPort)"
+    func handleIncomingRecord(record: FCGIIncomingRecordType, fromSocket socket: GCDAsyncSocket) {
+        let globalRequestID = "\(record.header.requestId)-\(socket.connectedPort)"
         
         switch record {
-        case let record as BeginRequestRecord:
-            let request = FCGIRequest(record: record, fromSocket: socket)
+        case let record as FCGIBeginRequest:
+            let request = FCGIRequest(header: record.header, fromSocket: socket, withFlags: record.flags!)
             
             objc_sync_enter(_currentRequests)
             _currentRequests[globalRequestID] = request
             objc_sync_exit(_currentRequests)
-            print("Recieved a BEGIN request: \(globalRequestID)")
+            print("Recieved a BEGIN request (#\(record.header.requestId)) on port \(socket.connectedPort)")
             
-            socket.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
-        case let record as ParamsRecord:
+            // read next request
+            socket.readDataToLength(FCGIHeader.Size, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
+        
+        case let record as FCGIParamsRequest:
             objc_sync_enter(_currentRequests)
             guard let request = _currentRequests[globalRequestID] else {
                 print("WARNING: handleRecord called for invalid requestID")
                 return
             }
             objc_sync_exit(_currentRequests)
-            print("Recieved a PARAMS request: \(globalRequestID)")
-
-            guard let params = record.params else {
-                // TODO: could possibly inject preware here
-                paramsAvailableHandler?(request)
-                // TODO: cleaner way to do this
-                socket.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
-                return
-            }
+            print("Recieved a PARAMS request (#\(record.header.requestId)) on port \(socket.connectedPort)")
             
-            for key in params.keys {
-                request.params[key] = params[key]
+            if let params = record.params {
+                for key in params.keys {
+                    request.params[key] = params[key]
+                }
             }
-            
-            socket.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
-        case let record as ByteStreamRecord:
+            socket.readDataToLength(FCGIHeader.Size, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
+        
+        case let record as FCGIStdInRequest:
             objc_sync_enter(_currentRequests)
             guard let request = _currentRequests[globalRequestID] else {
                 print("WARNING: handleRecord called for invalid requestID")
                 return
             }
             objc_sync_exit(_currentRequests)
-            print("Recieved a STREAM request: \(globalRequestID)")
+            print("Recieved a STREAM request (#\(record.header.requestId)) on port \(socket.connectedPort)")
             
-            if request.streamData == nil {
-                request.streamData = NSMutableData(capacity: 65536)
-            }
-            
-            if let recordData = record.rawData {
-                request.streamData!.appendData(recordData)
+            if let data = record.content {
+                if request.stdIn == nil {
+                    request.stdIn = NSMutableData(capacity: 65536)
+                }
+                request.stdIn!.appendData(data)
             } else if let httpRequest = HttpRequest(fromFastCgiRequest: request) {
-                _httpRequestProcessor.processHttpRequest(httpRequest)
+                self.delegate?.server(didReceiveHttpRequest: httpRequest)
+                request.finish()
+                
+                _recordContext[socket] = nil
+                objc_sync_enter(_currentRequests)
+                _currentRequests.removeValueForKey(globalRequestID)
+                objc_sync_exit(_currentRequests)
             }
             
-            request.finish()
-            
-            _recordContext[socket] = nil
-            
-            objc_sync_enter(_currentRequests)
-            _currentRequests.removeValueForKey(globalRequestID)
-            objc_sync_exit(_currentRequests)
+            socket.readDataToLength(FCGIHeader.Size, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
         default:
-            fatalError("ERROR: handleRecord called with an invalid FCGIRecord type")
+            fatalError("unreachable")
         }
-    }
-    
-    // MARK: Pre/middle/postware registration
-    
-    public func registerPrewareHandler(handler: RequestPrewareHandler) -> Void {
-        _httpRequestProcessor.registerPrewareHandler(handler)
-    }
-    
-    public func registerMiddlewareHandler(handler: RequestMiddlewareHandler) -> Void {
-        _httpRequestProcessor.registerMiddlewareHandler(handler)
-    }
-    
-    public func registerPostwareHandler(handler: RequestPostwareHandler) -> Void {
-        _httpRequestProcessor.registerPostwareHandler(handler)
+
     }
     
     // MARK: GCDAsyncSocketDelegate conformance
     
-    public func socket(sock: GCDAsyncSocket!, didAcceptNewSocket newSocket: GCDAsyncSocket!) {
+    internal func socket(sock: GCDAsyncSocket!, didAcceptNewSocket newSocket: GCDAsyncSocket!) {
         _activeSockets.insert(newSocket)
         
         let acceptedSocketQueue = dispatch_queue_create("SocketAcceptQueue-\(newSocket.connectedPort)", DISPATCH_QUEUE_SERIAL)
         newSocket.delegateQueue = acceptedSocketQueue
         
-        newSocket.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
+        newSocket.readDataToLength(FCGIHeader.Size, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
     }
     
-    public func socketDidDisconnect(sock: GCDAsyncSocket?, withError err: NSError!) {
+    internal func socketDidDisconnect(sock: GCDAsyncSocket?, withError err: NSError!) {
         guard let sock = sock else {
             print("WARNING: nil sock disconnect")
             return
@@ -244,7 +142,7 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
         _activeSockets.remove(sock)
     }
     
-    public func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
+    internal func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
         guard let socketTag = FCGISocketState(rawValue: tag) else {
             print("ERROR: Unknown socket tag")
             sock.disconnect()
@@ -253,26 +151,31 @@ public class FCGIServer: NSObject, GCDAsyncSocketDelegate {
         
         switch socketTag {
         case .AwaitingHeaderTag:
-            guard let record = createRecordFromHeaderData(data) else {
+            guard let header = FCGIHeader(withData: data) else {
                 print("ERROR: Unable to construct request record")
                 sock.disconnect()
                 return
             }
-            if record.contentLength == 0 {
-                // No content; handle the message
-                handleRecord(record, fromSocket: sock)
+            guard let record = header.asIncomingRecord() else {
+                print("ERROR: Unable to construct request receivable record. You've sent me an incorrect message.")
+                sock.disconnect()
+                return
+            }
+            if header.contentLength == 0 {
+                handleIncomingRecord(record, fromSocket: sock)
             } else {
                 // Read additional content
                 _recordContext[sock] = record
-                sock.readDataToLength(UInt(record.contentLength) + UInt(record.paddingLength), withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingContentAndPaddingTag.rawValue)
+                sock.readDataToLength(UInt(record.header.contentLength) + UInt(record.header.paddingLength), withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingContentAndPaddingTag.rawValue)
             }
         case .AwaitingContentAndPaddingTag:
-            guard let record = _recordContext[sock] else {
+            if var record = _recordContext[sock] {
+                record.receiveData(data)
+                handleIncomingRecord(record, fromSocket: sock)
+            } else {
                 print("ERROR: Case .AwaitingContentAndPaddingTag hit with no context")
                 return
             }
-            record.processContentData(data)
-            handleRecord(record, fromSocket: sock)
         }
     }
 }

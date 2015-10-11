@@ -26,32 +26,13 @@ internal protocol _RouteMatchable : RouteMatchable {
     func respondsToMethod(method: HttpMethod) -> Bool
 }
 
-internal struct RoutePattern : _RouteMatchable {
-    let route: String
-    internal let method: HttpMethod
-    internal let routeComponents: [String]
-    
-    init(route: String, forMethod method: HttpMethod) {
-        self.route = route
-        self.method = method
-        
-        self.routeComponents = self.route
-            .componentsSeparatedByString(RouteComponentSeparator)
-            .filter { !$0.isEmpty }
-    }
-    
-    internal func respondsToMethod(method: HttpMethod) -> Bool {
-        return self.method == method
-    }
-}
-
 extension _RouteMatchable {
     func match(url: String, forMethod method: HttpMethod) -> MatchedRoute? {
         guard self.respondsToMethod(method) else {
             return nil
         }
         
-        var parameters = url.queryParameters ?? [:]
+        var parameters = [String:String]()
         var wildcards: [String]? = nil
         
         let urlComponents = url
@@ -99,17 +80,17 @@ extension _RouteMatchable {
             ++componentIndex
         }
         
-        return MatchedRoute(route: self, withParameters: parameters, andWildcards: wildcards)
+        return MatchedRoute(target: self, withParameters: parameters, andWildcards: wildcards)
     }
 }
 
 public struct MatchedRoute {
-    public let route: RouteMatchable
+    public let target: RouteMatchable
     public let parameters: [String:String]
     public let wildcards: [String]?
     
-    init(route: RouteMatchable, withParameters parameters: [String:String], andWildcards wildcards: [String]?) {
-        self.route = route
+    init(target: RouteMatchable, withParameters parameters: [String:String], andWildcards wildcards: [String]?) {
+        self.target = target
         self.parameters = parameters
         self.wildcards = wildcards
     }

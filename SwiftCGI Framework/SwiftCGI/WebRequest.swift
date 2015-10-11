@@ -37,8 +37,28 @@ public protocol WebRequest {
     var queryParameters: [String:String]?  { get set }
     var headers: [String:String]  { get set }
     
+    var parameters: [String:String]  { get }
     var httpRequest: HttpRequest { get }
     var matchedRoute: MatchedRoute! { get }
+}
+
+extension WebRequest {
+    public var parameters: [String:String] {
+        var model: [String:String] = [:]
+        
+        if self.matchedRoute.parameters.count > 0 {
+            for (key,value) in self.matchedRoute.parameters {
+                model[key] = value
+            }
+        }
+        if let qp = self.queryParameters {
+            for (key,value) in qp {
+                model[key] = value
+            }
+        }
+        
+        return model
+    }
 }
 
 internal class WrappedHttpRequest : WebRequest {
@@ -84,35 +104,3 @@ internal class WrappedHttpRequest : WebRequest {
     }
 }
 
-//extension WebRequest {
-//    
-//    public var routeParameters: [String:String] {
-//        var toReturn = [String:String]()
-//        
-//        let urlComponents = self.url.componentsSeparatedByString("/")
-//        let routeComponents = self.matchedRoute?.route.componentsSeparatedByString("/")
-//        
-//        // TODO: move route parameters to RoutePattern class
-//        for (index, routeComponent) in routeComponents!.enumerate() {
-//            if let colonIndex = routeComponent.rangeOfString(":")?.startIndex {
-//                if colonIndex == routeComponent.startIndex { // ":" at starting
-//                toReturn[routeComponent[colonIndex..<routeComponent.endIndex]] = urlComponents[index]
-//            }
-//        }
-//        
-//        var index = 0
-//        for urlComponent in url.componentsSeparatedByString("/") {
-//            
-//            if urlComponent.rangeOfString(":")?.startIndex == self.url.startIndex {
-//                /// TODO: implement the route parameters
-//                // get matched route and find corresponding value
-//            }
-//            
-//            ++index
-//            }
-//        }
-//        
-//        return toReturn
-//    }
-//    
-//}

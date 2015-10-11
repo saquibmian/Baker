@@ -30,7 +30,7 @@ public struct HttpRequest {
         }
         
         url = _fastCgiRequest.path
-        body = _fastCgiRequest.streamData
+        body = _fastCgiRequest.stdIn
         
         var headers = [String:String]()
         for key in _fastCgiRequest.params.keys {
