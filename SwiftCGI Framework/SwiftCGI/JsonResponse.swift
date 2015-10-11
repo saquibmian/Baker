@@ -28,6 +28,7 @@ public struct JsonResponse : WebResponse {
     public func render() throws -> HttpResponse {
         let data = try NSJSONSerialization.dataWithJSONObject(_model, options: NSJSONWritingOptions.PrettyPrinted)
         let json = NSString(data: data, encoding: NSUTF8StringEncoding) as! String
-        return HttpResponse(status: _statusCode, contentType: _contentType, body: json)
+        let content = HttpContent(contentType: _contentType, string: json)
+        return HttpResponse(status: _statusCode, content: content)
     }
 }

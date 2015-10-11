@@ -48,7 +48,7 @@ class FCGIRecord {
     
     let paddingLength: FCGIPaddingLength
     
-    var type: FCGIRecordType { fatalError("Not Implemented") }
+    var type: FCGIRecordType! { get { return nil } }
     
     var fcgiPacketData: NSData {
         var bytes = [UInt8](count: 8, repeatedValue: 0)
@@ -80,6 +80,37 @@ class FCGIRecord {
         fatalError("Not Implemented")
     }
 }
+//
+//struct NewBeginRequestRecord {
+//    var header: FCGIRecordHeader
+//    var role: FCGIRequestRole?
+//    var flags: FCGIRequestFlags?
+//    
+//    init(withHeader header: FCGIRecordHeader, role: FCGIRequestRole, andFlags flags: FCGIRequestFlags? ) {
+//        self.header = header
+//        self.header.type = .BeginRequest
+//        self.role = role
+//        self.flags = flags
+//    }
+//    
+//    init?(fromData data: NSData, withHeader header: FCGIRecordHeader) {
+//        self.header = header
+//        self.header.type = .BeginRequest
+//        
+//        let rawRole = data.readUInt16FromNetworkOrder(atIndex: 0)
+//        if let concreteRole = FCGIRequestRole(rawValue: rawRole) {
+//            self.role = concreteRole
+//            
+//            var rawFlags: FCGIRequestFlags.RawValue = 0
+//            data.getBytes(&rawFlags, range: NSMakeRange(2, 1))
+//            self.flags = FCGIRequestFlags(rawValue: rawFlags)
+//        } else {
+//            print("Can't create a BEGIN request for role \(rawRole)")
+//            return nil
+//        }
+//    }
+//    
+//}
 
 // Begin request record
 class BeginRequestRecord: FCGIRecord {
@@ -89,7 +120,7 @@ class BeginRequestRecord: FCGIRecord {
     override var type: FCGIRecordType { return .BeginRequest }
     
     override func processContentData(data: NSData) {
-        let rawRole = readUInt16FromBigEndianData(data, atIndex: 0)
+        let rawRole = data.readUInt16FromNetworkOrder(atIndex: 0)
         
         if let concreteRole = FCGIRequestRole(rawValue: rawRole) {
             role = concreteRole
@@ -97,6 +128,8 @@ class BeginRequestRecord: FCGIRecord {
             var rawFlags: FCGIRequestFlags.RawValue = 0
             data.getBytes(&rawFlags, range: NSMakeRange(2, 1))
             flags = FCGIRequestFlags(rawValue: rawFlags)
+        } else {
+            print("can't handle role \(rawRole)")
         }
     }
 }
@@ -264,11 +297,70 @@ class ParamsRecord: FCGIRecord {
 
 // MARK: Helper functions
 
-func readUInt16FromBigEndianData(data: NSData, atIndex index: Int) -> UInt16 {
-    var bigUInt16: UInt16 = 0
-    data.getBytes(&bigUInt16, range: NSMakeRange(index, 2))
-    return CFSwapInt16BigToHost(bigUInt16)
+extension NSData {
+    func readUInt16FromNetworkOrder(atIndex index: Int) -> UInt16 {
+        var bigUInt16: UInt16 = 0
+        self.getBytes(&bigUInt16, range: NSMakeRange(index, sizeof(UInt16)))
+        return UInt16(bigEndian: bigUInt16)
+    }
 }
+//
+//struct FCGIRecordHeader {
+//    
+//    var version: FCGIVersion
+//    var requestID: FCGIRequestID
+//    var contentLength: FCGIContentLength
+//    var paddingLength: FCGIPaddingLength
+//    var type: FCGIRecordType
+//    
+//    var rawData: NSData {
+//        var bytes = [UInt8](count: 8, repeatedValue: 0)
+//        bytes[0] = version.rawValue
+//        bytes[1] = UInt8(type.rawValue)
+//        
+//        let (msb, lsb) = requestID.decomposeBigEndian()
+//        bytes[2] = msb
+//        bytes[3] = lsb
+//        
+//        let bigEndianContentLength = CFSwapInt16HostToBig(contentLength)
+//        bytes[4] = UInt8(bigEndianContentLength & 0xFF) // MSB
+//        bytes[5] = UInt8(bigEndianContentLength >> 8)   // LSB
+//        
+//        bytes[6] = paddingLength
+//        
+//        return NSData(bytes: &bytes, length: 8)
+//    }
+//
+//    init?(fromData data: NSData) {
+//        guard data.length == Int(FCGIRecordHeaderLength) else {
+//            return nil
+//        }
+//        
+//        var rawVersion: FCGIVersion.RawValue = 0
+//        data.getBytes(&rawVersion, range: NSMakeRange(0, 1))
+//        guard let version = FCGIVersion(rawValue: rawVersion) else {
+//            return nil
+//        }
+//        
+//        switch version {
+//        case .Version1:
+//            var rawType: FCGIRecordType.RawValue = 0
+//            data.getBytes(&rawType, range: NSMakeRange(1, 1))
+//            if let type = FCGIRecordType(rawValue: rawType) {
+//                self.version = version
+//                self.type = type
+//                self.requestID = data.readUInt16FromNetworkOrder(atIndex: 2)
+//                self.contentLength = data.readUInt16FromNetworkOrder(atIndex: 4)
+//
+//                var paddingLength: FCGIPaddingLength = 0
+//                data.getBytes(&paddingLength, range: NSMakeRange(6, 1))
+//                self.paddingLength = paddingLength
+//            }
+//        }
+//
+//        return nil
+//    }
+//}
 
 func createRecordFromHeaderData(data: NSData) -> FCGIRecord? {
     // Check the length of the data
@@ -287,10 +379,10 @@ func createRecordFromHeaderData(data: NSData) -> FCGIRecord? {
                 
                 if let type = FCGIRecordType(rawValue: rawType) {
                     // Parse the request ID
-                    let requestID = readUInt16FromBigEndianData(data, atIndex: 2)
+                    let requestID = data.readUInt16FromNetworkOrder(atIndex: 2)
                     
                     // Parse the content length
-                    let contentLength = readUInt16FromBigEndianData(data, atIndex: 4)
+                    let contentLength = data.readUInt16FromNetworkOrder(atIndex: 4)
                     
                     // Parse the padding length
                     var paddingLength: FCGIPaddingLength = 0

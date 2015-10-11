@@ -19,8 +19,10 @@ internal struct HttpResponseSerializer {
         headers.append("HTTP/1.1 \(response.status.rawValue) \(response.status.description)")
         
         headers.append("Status: \(response.status.rawValue) \(response.status.description)") // neccesary for fastcgi
-        headers.append("Content-Type: \(response.contentType); charset=utf-8") // TODO charset not need for non-text content types
-        headers.append("Content-Length: \(response.body.utf8.count)")
+        if let content = response.content {
+            headers.append("Content-Type: \(content.contentType); charset=utf-8") // TODO charset not need for non-text content types
+            headers.append("Content-Length: \(content.contentLength)")
+        }
         for header in response.headers.keys {
             headers.append("\(header): \(response.headers[header])")
         }
@@ -33,8 +35,13 @@ internal struct HttpResponseSerializer {
         
         headers.append(HTTPNewline)
         
-        let responseString = headers.joinWithSeparator(HTTPNewline) + response.body
-                        
+        let responseString: String = {
+            if let data = response.content, let body = data.dataAsString {
+                return headers.joinWithSeparator(HTTPNewline) + body
+            }
+            return headers.joinWithSeparator(HTTPNewline)
+        }()
+        
         return responseString.dataUsingEncoding(primaryEncoding)
     }
 }

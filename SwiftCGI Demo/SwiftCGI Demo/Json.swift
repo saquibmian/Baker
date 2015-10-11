@@ -12,8 +12,10 @@ import SwiftCGI
 let jsonRootHandler: RequestHandler = { request in
     var model = ["hello":"myfriend"]
     
-    for (key,value) in request.httpRequest.queryParameters {
-        model[key] = value
+    if let qp = request.queryParameters {
+        for (key,value) in qp {
+            model[key] = value
+        }
     }
 
     return JsonResponse(model: model )!
@@ -21,14 +23,15 @@ let jsonRootHandler: RequestHandler = { request in
 
 struct JsonController : Getable, Postable, Patchable {
     
-    init() {
-        print("initing json controller")
-    }
-    
     internal func get(request: WebRequest) -> WebResponse {
         var model = ["hello":"myfriend"]
         
-        for (key,value) in request.httpRequest.queryParameters {
+        if let qp = request.queryParameters {
+            for (key,value) in qp {
+                model[key] = value
+            }
+        }
+        for (key,value) in request.matchedRoute.parameters {
             model[key] = value
         }
         
@@ -38,8 +41,10 @@ struct JsonController : Getable, Postable, Patchable {
     internal func post(request: WebRequest) -> WebResponse {
         var model = ["hello":"myfriend"]
         
-        for (key,value) in request.httpRequest.queryParameters {
-            model[key] = value
+        if let qp = request.queryParameters {
+            for (key,value) in qp {
+                model[key] = value
+            }
         }
         
         return JsonResponse(model: model )!
@@ -48,8 +53,10 @@ struct JsonController : Getable, Postable, Patchable {
     internal func patch(request: WebRequest) -> WebResponse {
         var model = ["hello":"myfriend"]
         
-        for (key,value) in request.httpRequest.queryParameters {
-            model[key] = value
+        if let qp = request.queryParameters {
+            for (key,value) in qp {
+                model[key] = value
+            }
         }
         
         return JsonResponse(model: model )!

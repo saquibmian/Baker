@@ -46,9 +46,9 @@
 
 public typealias RequestHandler = WebRequest -> WebResponse
 
-public typealias RequestPrewareHandler = HttpRequest throws -> HttpRequest
-public typealias RequestMiddlewareHandler = (HttpRequest, WebResponse) throws -> WebResponse
-public typealias RequestPostwareHandler = (HttpRequest, WebResponse) throws -> Void
+public typealias RequestPrewareHandler = WebRequest throws -> Void
+public typealias RequestMiddlewareHandler = (WebRequest, WebResponse) throws -> Void
+public typealias RequestPostwareHandler = (WebRequest, WebResponse) throws -> Void
 
 
 // MARK: Low-level stuff
@@ -58,13 +58,13 @@ public typealias FCGIApplicationStatus = UInt32
 
 public enum FCGIOutputStream: UInt8 {
     case Stdout = 6
-    case Stderr = 7
+    //case Stderr = 7
 }
 
 public enum FCGIProtocolStatus: UInt8 {
     case RequestComplete = 0
-    case FCGI_CANT_MPX_CONN = 1
-    case Overloaded = 2
+    //case FCGI_CANT_MPX_CONN = 1
+    //case Overloaded = 2
 }
 
 
@@ -85,41 +85,37 @@ enum FCGIVersion: UInt8 {
 
 enum FCGIRequestRole: UInt16 {
     case Responder = 1
-    
-    // Not implemented
     //case Authorizer = 2
     //case Filter = 3
 }
 
 enum FCGIRecordType: UInt8 {
     case BeginRequest = 1
-    case AbortRequest = 2
+    //case AbortRequest = 2
     case EndRequest = 3
     case Params = 4
     case Stdin = 5
     case Stdout = 6
     case Stderr = 7
-    case Data = 8
-    case GetValues = 9
-    case GetValuesResult = 10
+    //case Data = 8
+    //case GetValues = 9
+    //case GetValuesResult = 10
 }
 
-struct FCGIRequestFlags : OptionSetType, BooleanType {
+struct FCGIRequestFlags : OptionSetType {
     typealias RawValue = UInt
-    private var value: UInt = 0
-    init(_ value: UInt) { self.value = value }
-    init(rawValue value: UInt) { self.value = value }
-    init(nilLiteral: ()) { self.value = 0 }
-    static var allZeros: FCGIRequestFlags { return self.init(0) }
-    static func fromMask(raw: UInt) -> FCGIRequestFlags { return self.init(raw) }
-    var rawValue: UInt { return self.value }
-    var boolValue: Bool { return self.value != 0 }
+    let rawValue: RawValue
     
-    static var None: FCGIRequestFlags { return self.init(0) }
-    static var KeepConnection: FCGIRequestFlags { return FCGIRequestFlags(1 << 0) }
+    init(rawValue value: RawValue) {
+        self.rawValue = value
+    }
+    
+    static var allZeros = FCGIRequestFlags(rawValue: 0)
+    static var None = FCGIRequestFlags(rawValue: 0)
+    static var KeepConnection = FCGIRequestFlags(rawValue: 1 << 0)
 }
 
-enum FCGISocketTag: Int {
+enum FCGISocketState: Int {
     case AwaitingHeaderTag = 0
     case AwaitingContentAndPaddingTag
 }

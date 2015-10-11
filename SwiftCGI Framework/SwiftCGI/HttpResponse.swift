@@ -28,30 +28,25 @@
 //  POSSIBILITY OF SUCH DAMAGE.
 //
 
-public struct HttpResponse {
+public class HttpResponse {
     
     public var status: HttpStatusCode
-    public var contentType: String
-    public var contentLength: Int { return body.utf8.count }
-    public var cookies: [String:String]?
     public var headers: [String:String] = [:]
-    public var body: String
-    
 
+    public var content: HttpContent?
+    public var cookies: [String:String]?
+    
     // MARK: Init
-    public init(status: HttpStatusCode, contentType: String, body: String) {
+    public init(status: HttpStatusCode) {
         self.status = status
-        self.body = body
-        self.contentType = contentType
+    }
+
+    public init(status: HttpStatusCode, content: HttpContent) {
+        self.status = status
+        self.content = content
     }
     
-    public init(body: String) {
-        status = .OK
-        self.body = body
-        contentType = HttpContentType.TextPlain
-    }
-    
-    public mutating func setValue(value: String, forHeader header: String ) {
+    public func setValue(value: String, forHeader header: String ) {
         if header == HttpHeader.ContentLength {
             // TODO throw error
         }
@@ -61,7 +56,7 @@ public struct HttpResponse {
         headers[header] = value
     }
     
-    public mutating func setValue(value: String, forCookie key: String) {
+    public func setValue(value: String, forCookie key: String) {
         if cookies == nil {
             cookies = [:]
         }

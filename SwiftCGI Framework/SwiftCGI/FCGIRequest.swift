@@ -79,7 +79,7 @@ internal class FCGIRequest {
         socket.writeData(outRecord.fcgiPacketData, withTimeout: 5, tag: 0)
         
         if keepConnection {
-            socket.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketTag.AwaitingHeaderTag.rawValue)
+            socket.readDataToLength(FCGIRecordHeaderLength, withTimeout: FCGITimeout, tag: FCGISocketState.AwaitingHeaderTag.rawValue)
         } else {
             socket.disconnectAfterWriting()
         }
@@ -87,18 +87,18 @@ internal class FCGIRequest {
         return true
     }
     
+    internal func finish() {
+        finishWithProtocolStatus(.RequestComplete, andApplicationStatus: 0)
+    }
     
+    
+    
+}
+
+extension FCGIRequest {
+    /// include the query string
     internal var path: String {
         if var uri = params["REQUEST_URI"] {
-            if let queryStringStart = uri.rangeOfString("?") {
-                uri = uri[uri.startIndex..<queryStringStart.startIndex]
-            }
-            
-            // trim the trailing "/"
-            if uri[uri.endIndex.predecessor()] == "/" {
-                uri = uri[uri.startIndex..<uri.endIndex.predecessor()]
-            }
-            
             return uri
         }
         
@@ -112,10 +112,6 @@ internal class FCGIRequest {
             }
         }
         return nil
-    }
-    
-    internal func finish() {
-        finishWithProtocolStatus(.RequestComplete, andApplicationStatus: 0)
     }
     
     // TODO: move this one level up
@@ -143,5 +139,5 @@ internal class FCGIRequest {
         }
         return nil
     }
-    
+
 }

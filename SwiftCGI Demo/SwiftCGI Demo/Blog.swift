@@ -12,5 +12,5 @@ import SwiftCGI
 let blogRootHandler: RequestHandler = { request in
     var extraGreeting = ""
     
-    return HttpResponse(status: HttpStatusCode.OK, contentType: HttpContentType.TextPlain, body: "Welcome to my blog!")
+    return HttpResponse(status: HttpStatusCode.OK, content: HttpContent( contentType: HttpContentType.TextPlain, string: "Welcome to my blog!") )
 }

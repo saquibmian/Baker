@@ -38,20 +38,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     var server: FCGIServer!
     
+    private func mapRoutes(router: Router) {
+        let root = router.createNestedRouter(atBaseRoute: "/root/")
+        root.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
+        root.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
+        root.mapRoute("/root/json/", toController: { return JsonController() } )
+        root.mapRoute("/root/json/:id/:woah", toController: { return JsonController() } )
+    }
+    
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        let router = Router()
-        router.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
-        router.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
-        router.mapRoute("/root/json/", toController: { return JsonController() } )
+        server = FCGIServer(port: 9081, configureRouter: mapRoutes)
         
-        server = FCGIServer(port: 9081, requestRouter: router)
-        
-        server.registerPrewareHandler { (req) -> HttpRequest in
+        server.registerPrewareHandler { req in
             let method = req.method.rawValue
-            let path = req.path
+            let path = req.url
             print("\(method) \(path)")
-            
-            return req;
         }
 
         server.registerMiddlewareHandler(sessionMiddlewareHandler)
