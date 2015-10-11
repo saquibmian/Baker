@@ -8,11 +8,24 @@
 
 import Foundation
 
-public class Router {
+public class Router : _RouteMatchable {
     
-    private var _routes: [(routePattern:RoutePattern, handler:() -> RequestHandler)] = []
+    private var _routes: [(routePattern:_RouteMatchable, handlerBuilder:() -> RequestHandler)] = []
     
-    public init() {}
+    public let route: String
+    let routeComponents: [String]
+
+    public init() {
+        route = RouteCharacter.Separator
+        routeComponents = []
+    }
+    
+    internal init(forRoute route: String) {
+        self.route = route
+        self.routeComponents = self.route
+            .componentsSeparatedByString(RouteComponentSeparator)
+            .filter { !$0.isEmpty }
+    }
     
     public func mapRoute(pattern: String, toController controller: () -> Any) {
         let instantiatedController = controller()
@@ -44,32 +57,66 @@ public class Router {
     }
     
     func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: () -> RequestHandler) {
-        let routePattern = RoutePattern(route: pattern, forMethod: method)
-        _routes.append(routePattern: routePattern, handler: action)
+        let joinedPattern = RouteCharacter.Separator + (self.route + RouteCharacter.Separator + pattern)
+            .componentsSeparatedByString(RouteCharacter.Separator)
+            .filter { !$0.isEmpty && $0 != RouteCharacter.Wildcard }
+            .joinWithSeparator(RouteCharacter.Separator)
         
-        print("Registered route: \(routePattern.method.rawValue) \(routePattern.route)")
+        let routePattern: _RouteMatchable = RoutePattern(route: joinedPattern, forMethod: method)
+        _routes.append(routePattern: routePattern, handlerBuilder: action)
+        
+        print("Registered route: \(method.rawValue) \(routePattern.route)")
     }
     
-    func routeRequest(request: WebRequest) -> (routePattern:MatchedRoute, handler:RequestHandler)? {
-        for (pattern, handler) in _routes where pattern.method == request.method  {
-            if let match = pattern.match(request.url) {
-                return (match,handler())
+    public func createNestedRouter(atBaseRoute route: String) -> Router {
+        var joinedPattern = RouteCharacter.Separator + (self.route + RouteCharacter.Separator + route)
+            .componentsSeparatedByString(RouteCharacter.Separator)
+            .filter { !$0.isEmpty && $0 != RouteCharacter.Wildcard }
+            .joinWithSeparator(RouteCharacter.Separator)
+        joinedPattern += RouteCharacter.Separator + RouteCharacter.Wildcard
+        
+        let nestedRouter = Router(forRoute: joinedPattern)
+        let handler: () -> RequestHandler = { return { req in
+            // this handler should never be explicitly invoked
+            return HttpResponse(status: HttpStatusCode.InternalServerError)
+        } }
+        
+        _routes.append(routePattern: (nestedRouter as _RouteMatchable), handlerBuilder: handler)
+        
+        return nestedRouter
+    }
+    
+    func routeRequest(var request: WebRequest) -> (routePattern:MatchedRoute, handler:RequestHandler)? {
+        //print("In Router at path: \(self.route)")
+        for (pattern, handlerBuilder) in _routes {
+            //print("\tattempting to match against \(pattern.route)")
+            if var match = pattern.match(request.url, forMethod: request.method) {
+                var handler = handlerBuilder()
+                
+                // handle nested routers
+                while let router = match.route as? Router {
+                    // avoid double testing
+                    if router.route != self.route {
+                        if let intermediaryMatch = router.routeRequest(request) {
+                            match = intermediaryMatch.routePattern
+                            handler = intermediaryMatch.handler
+                        } else {
+                            return nil
+                        }
+                    }
+                }
+                
+                return (match,handler)
             }
         }
         
         return nil
     }
     
-    public func createNestedRouter(var atBaseRoute route: String) -> Router {
-        if !route.hasSuffix(RouteCharacter.Wildcard) {
-            route = route + RouteCharacter.Wildcard
-        }
-
-        let nestedRouter = Router()
-        
-        
-        
-        
-        return nestedRouter
+    // MARK: RouteMatchable conformance
+    
+    func respondsToMethod(method: HttpMethod) -> Bool {
+        return true
     }
 }
+

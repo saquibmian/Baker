@@ -40,10 +40,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func mapRoutes(router: Router) {
         let root = router.createNestedRouter(atBaseRoute: "/root/")
-        root.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
-        root.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
-        root.mapRoute("/root/json/", toController: { return JsonController() } )
-        root.mapRoute("/root/json/:id/:woah", toController: { return JsonController() } )
+        let rootRoot = root.createNestedRouter(atBaseRoute: "/root/")
+        rootRoot.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
+        rootRoot.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
+        rootRoot.mapRoute("/root/json/", toController: { return JsonController() } )
+        rootRoot.mapRoute("/root/json/:id/:woah", toController: { return JsonController() } )
     }
     
     func applicationDidFinishLaunching(aNotification: NSNotification) {

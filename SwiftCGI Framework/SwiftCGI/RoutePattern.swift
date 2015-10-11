@@ -17,69 +17,40 @@ struct RouteCharacter {
     static let Wildcard = "*"
 }
 
-internal protocol RouteMatchable {
+public protocol RouteMatchable {
     var route: String { get }
-    var method: HttpMethod { get }
-    
 }
 
-public struct RoutePattern {
+internal protocol _RouteMatchable : RouteMatchable {
+    var routeComponents: [String] { get }
+    func respondsToMethod(method: HttpMethod) -> Bool
+}
+
+internal struct RoutePattern : _RouteMatchable {
     let route: String
-    let method: HttpMethod
-    internal let components: [String]
+    internal let method: HttpMethod
+    internal let routeComponents: [String]
     
     init(route: String, forMethod method: HttpMethod) {
         self.route = route
         self.method = method
         
-        self.components = self.route
+        self.routeComponents = self.route
             .componentsSeparatedByString(RouteComponentSeparator)
             .filter { !$0.isEmpty }
     }
-}
-extension RoutePattern : Hashable {
-    public var hashValue: Int {
-        return (self.route + self.method.rawValue).hashValue
+    
+    internal func respondsToMethod(method: HttpMethod) -> Bool {
+        return self.method == method
     }
 }
 
-public func ==(lhs: RoutePattern, rhs: RoutePattern) -> Bool {
-    return lhs.method == rhs.method && lhs.route == rhs.route
-}
-
-private extension String {
-    
-    var urlDecodedString: String {
-        return self.stringByReplacingOccurrencesOfString("+", withString: " ").stringByRemovingPercentEncoding!
-    }
-    
-    var queryParameters: [String:String]? {
-        var toReturn: [String:String]!
-        
-        var toParse = self
-        if let index = toParse.rangeOfString(RouteCharacter.QueryStringStart) {
-            toParse = toParse.substringFromIndex(index.startIndex)
+extension _RouteMatchable {
+    func match(url: String, forMethod method: HttpMethod) -> MatchedRoute? {
+        guard self.respondsToMethod(method) else {
+            return nil
         }
         
-        toReturn = [String:String]()
-        for kvp in toParse.componentsSeparatedByString(RouteCharacter.QueryStringSeparator) {
-            if kvp.hasPrefix(RouteCharacter.QueryStringParameterSeparator) {
-                continue // skip malformed
-            }
-            
-            let pair = kvp.componentsSeparatedByString(RouteCharacter.QueryStringParameterSeparator)
-            let key = pair[0]
-            let value = pair.count == 2 ? pair[1] : ""
-            
-            toReturn[key] = value.urlDecodedString
-        }
-        
-        return toReturn
-    }
-}
-
-extension RoutePattern {
-    func match(url: String) -> MatchedRoute? {
         var parameters = url.queryParameters ?? [:]
         var wildcards: [String]? = nil
         
@@ -89,14 +60,14 @@ extension RoutePattern {
             .componentsSeparatedByString(RouteCharacter.Separator)
             .filter { !$0.isEmpty }
         
-        let componentCountEqual = self.components.count == urlComponents.count
+        let componentCountEqual = self.routeComponents.count == urlComponents.count
         let routeContainsWildcard = self.route.containsString(RouteCharacter.Wildcard)
         guard componentCountEqual || routeContainsWildcard else {
             return nil
         }
         
         var componentIndex = 0
-        for patternComponent in self.components {
+        for patternComponent in self.routeComponents {
             var urlComponent: String!
             if componentIndex < urlComponents.count {
                 urlComponent = urlComponents[componentIndex]
@@ -133,13 +104,44 @@ extension RoutePattern {
 }
 
 public struct MatchedRoute {
-    public let route: RoutePattern
+    public let route: RouteMatchable
     public let parameters: [String:String]
     public let wildcards: [String]?
     
-    init(route: RoutePattern, withParameters parameters: [String:String], andWildcards wildcards: [String]?) {
+    init(route: RouteMatchable, withParameters parameters: [String:String], andWildcards wildcards: [String]?) {
         self.route = route
         self.parameters = parameters
         self.wildcards = wildcards
+    }
+}
+
+private extension String {
+    
+    var urlDecodedString: String {
+        return self.stringByReplacingOccurrencesOfString("+", withString: " ").stringByRemovingPercentEncoding!
+    }
+    
+    var queryParameters: [String:String]? {
+        var toReturn: [String:String]!
+        
+        var toParse = self
+        if let index = toParse.rangeOfString(RouteCharacter.QueryStringStart) {
+            toParse = toParse.substringFromIndex(index.startIndex.successor())
+        }
+        
+        toReturn = [String:String]()
+        for kvp in toParse.componentsSeparatedByString(RouteCharacter.QueryStringSeparator) {
+            if kvp.hasPrefix(RouteCharacter.QueryStringParameterSeparator) {
+                continue // skip malformed
+            }
+            
+            let pair = kvp.componentsSeparatedByString(RouteCharacter.QueryStringParameterSeparator)
+            let key = pair[0]
+            let value = pair.count == 2 ? pair[1] : ""
+            
+            toReturn[key] = value.urlDecodedString
+        }
+        
+        return toReturn
     }
 }
