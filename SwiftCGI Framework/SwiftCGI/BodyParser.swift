@@ -6,14 +6,14 @@
 //  Copyright © 2015 Ian Wagner. All rights reserved.
 //
 
-public class BodyParser : Handler {
+public class BodyParser : RequestHandler {
     internal static let BodyParserKey = "body-parser-body"
     
-    public func didReceiveRequest(request: HttpRequest) {
+    public func didReceiveRequest(request: HttpRequest) -> HttpResponse? {
         if let contentType = request.headers[HttpHeader.ContentType] {
             guard contentType == HttpContentType.ApplicationJSON else {
                 // continue
-                return
+                return nil
             }
             
             if let data = request.body {
@@ -25,8 +25,9 @@ public class BodyParser : Handler {
                 }
             }
         }
+        return nil
     }
-    public func willSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute) {
+    public func willSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
         if let contentType = request.headers[HttpHeader.ContentType] {
             guard contentType == HttpContentType.ApplicationJSON else {
                 // continue
@@ -41,14 +42,14 @@ public class BodyParser : Handler {
         }
     }
     
-    public func didSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute) { }
+    public func didSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) { }
     
 }
 
 extension HttpRequest {
     var customBody: Any? {
         get {
-            guard let parsedBody = self.customPropertyForKey(BodyParser.BodyParserKey) else {
+            guard let parsedBody = self.customValue(forKey: BodyParser.BodyParserKey) else {
                 return nil
             }
             return parsedBody

@@ -96,33 +96,10 @@ public struct MatchedRoute {
     }
 }
 
-private extension String {
+public extension String {
     
     var urlDecodedString: String {
         return self.stringByReplacingOccurrencesOfString("+", withString: " ").stringByRemovingPercentEncoding!
     }
-    
-    var queryParameters: [String:String]? {
-        var toReturn: [String:String]!
-        
-        var toParse = self
-        if let index = toParse.rangeOfString(RouteCharacter.QueryStringStart) {
-            toParse = toParse.substringFromIndex(index.startIndex.successor())
-        }
-        
-        toReturn = [String:String]()
-        for kvp in toParse.componentsSeparatedByString(RouteCharacter.QueryStringSeparator) {
-            if kvp.hasPrefix(RouteCharacter.QueryStringParameterSeparator) {
-                continue // skip malformed
-            }
-            
-            let pair = kvp.componentsSeparatedByString(RouteCharacter.QueryStringParameterSeparator)
-            let key = pair[0]
-            let value = pair.count == 2 ? pair[1] : ""
-            
-            toReturn[key] = value.urlDecodedString
-        }
-        
-        return toReturn
-    }
+
 }

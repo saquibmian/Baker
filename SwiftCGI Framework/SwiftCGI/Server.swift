@@ -28,32 +28,21 @@
 //  POSSIBILITY OF SUCH DAMAGE.
 //
 
-public protocol RequestHandler {
-    func didReceiveRequest(request: HttpRequest)
+
+
+protocol HttpRequestReceiver {
+    var delegate: HttpRequestReceiverDelegate! { get set }
+    func start() throws
 }
 
-public protocol ResponseHandler {
-    func willSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute)
-    func didSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute)
-}
-
-public protocol Handler : RequestHandler, ResponseHandler {}
-
-public protocol HttpRequestDelegate {
+public protocol HttpRequestReceiverDelegate {
     func server(didReceiveHttpRequest httpRequest: HttpRequest)
-}
-
-internal protocol ConnectionManager {
-    func connection(connection: FastCGIConnection, didReceiveHttpRequest httpRequest: HttpRequest)
-    func connection(connection: FastCGIConnection, willSendResponse response: HttpResponse, forRequest request: HttpRequest)
-    func connection(connection: FastCGIConnection, didSendResponse response: HttpResponse, forRequest request: HttpRequest)
-    func connectionDidClose(connection: FastCGIConnection)
 }
 
 // NOTE: This class muse inherit from NSObject; otherwise the Obj-C code for
 // GCDAsyncSocket will somehow not be able to store a reference to the delegate
 // (it will remain nil and no error will be logged).
-internal class FCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager {
+internal class FCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager, HttpRequestReceiver {
 
     private let _port: UInt16
     private let _timeout: NSTimeInterval = 5
@@ -65,7 +54,7 @@ internal class FCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager {
         GCDAsyncSocket(delegate: self, delegateQueue: self._delegateQueue)
     }()
 
-    internal var delegate: HttpRequestDelegate!
+    internal var delegate: HttpRequestReceiverDelegate!
 
     internal init(port: UInt16) {
         self._port = port
@@ -83,7 +72,7 @@ internal class FCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager {
         // TODO: currently httprequest delegate does everything...these will forward to that?
     }
     func connection(connection: FastCGIConnection, didSendResponse response: HttpResponse, forRequest request: HttpRequest) {
-        
+        // use this guy for loggin the request, with time
     }
     internal func socket(socket: GCDAsyncSocket!, didAcceptNewSocket newSocket: GCDAsyncSocket!) {
         let connection = FastCGIConnection(connectionForSocket: newSocket, withManager: self)

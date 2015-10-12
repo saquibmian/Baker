@@ -6,20 +6,20 @@
 //  Copyright © 2015 Ian Wagner. All rights reserved.
 //
 
-public class Application : HttpRequestDelegate {
+public class Application : HttpRequestReceiverDelegate {
     public let port: UInt16
     private let _httpRequestProcessor: HttpRequestProcessor
     private let _router: Router
-    private let _fcgi: FCGIServer
+    private let _requestReciever: HttpRequestReceiver
     
     internal init(port: UInt16, requestRouter: Router) {
         self.port = port
         self._router = requestRouter
         
         self._httpRequestProcessor = HttpRequestProcessor(withRouter: _router)
-        self._fcgi = FCGIServer(port: self.port)
+        self._requestReciever = FCGIServer(port: self.port)
 
-        self._fcgi.delegate = self
+        self._requestReciever.delegate = self
     }
     
     public convenience init(port: UInt16, configureRouter: Router -> Void ) {
@@ -29,22 +29,14 @@ public class Application : HttpRequestDelegate {
     }
     
     public func start() throws {
-        try self._fcgi.start()
+        try self._requestReciever.start()
     }
     
-    public func registerPrewareHandler(handler: RequestPrewareHandler) -> Void {
-        _httpRequestProcessor.registerPrewareHandler(handler)
+    public func use(handler: RequestHandler) {
+        _httpRequestProcessor.addHandler(handler)
     }
     
-    public func registerMiddlewareHandler(handler: RequestMiddlewareHandler) -> Void {
-        _httpRequestProcessor.registerMiddlewareHandler(handler)
-    }
-    
-    public func registerPostwareHandler(handler: RequestPostwareHandler) -> Void {
-        _httpRequestProcessor.registerPostwareHandler(handler)
-    }
-    
-    /// MARK: HttpRequestDelegate conformance
+    /// MARK: HttpRequestReceiverDelegate conformance
     
     public func server(didReceiveHttpRequest httpRequest: HttpRequest) {
         _httpRequestProcessor.processHttpRequest(httpRequest)

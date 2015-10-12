@@ -50,13 +50,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         app = Application(port: 9081, configureRouter: mapRoutes)
         
-        app.registerPrewareHandler { req in
-            let method = req.method.rawValue
-            let path = req.url
-            print("\(method) \(path)")
-        }
-
-        app.registerMiddlewareHandler(sessionMiddlewareHandler)
+        app.use(Logger())
+        app.use(Authorizer())
         
         do {
             try app.start()
@@ -78,5 +73,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.sharedApplication().terminate(sender)
     }
     
+}
+
+private struct Logger : RequestHandler {
+    private static let ResponseTimeKey = "response-time-key"
+    
+    func didReceiveRequest(request: HttpRequest) -> HttpResponse? {
+        request.setCustomValue(NSDate(), forKey: Logger.ResponseTimeKey)
+        return nil
+    }
+    
+    func willSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
+        // do nothing
+    }
+    
+    func didSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
+        if let property = request.customValue(forKey: Logger.ResponseTimeKey), let startedAt = property as? NSDate {
+            let durationMilliseconds = Int(startedAt.timeIntervalSinceNow) * -1000
+            let method = request.method.rawValue.uppercaseString
+            
+            print("\(method) \(request.url) \(durationMilliseconds)ms")
+        }
+    }
+}
+
+private struct Authorizer : RequestHandler {
+    func didReceiveRequest(request: HttpRequest) -> HttpResponse? {
+        return HttpResponse(status: HttpStatusCode.Forbidden)
+    }
+    
+    func willSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
+        // do nothing
+    }
+    
+    func didSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
+        // do nothing
+    }
 }
 

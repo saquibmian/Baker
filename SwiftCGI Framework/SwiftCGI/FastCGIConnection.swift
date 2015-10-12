@@ -6,6 +6,13 @@
 //  Copyright © 2015 Ian Wagner. All rights reserved.
 //
 
+internal protocol ConnectionManager {
+    func connection(connection: FastCGIConnection, didReceiveHttpRequest httpRequest: HttpRequest)
+    func connection(connection: FastCGIConnection, willSendResponse response: HttpResponse, forRequest request: HttpRequest)
+    func connection(connection: FastCGIConnection, didSendResponse response: HttpResponse, forRequest request: HttpRequest)
+    func connectionDidClose(connection: FastCGIConnection)
+}
+
 internal class InternalRequestContext {
     internal let version: FCGIVersion
     internal let requestId: UInt16
@@ -28,6 +35,7 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
     
     let manager: ConnectionManager
     let socket: GCDAsyncSocket
+    let queue: dispatch_queue_t
     
     private var _incomingHttpRequests: [UInt16:FCGIRequest] = [:]
     // the protocol only sends one whole record at a time
@@ -36,6 +44,7 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
     init(connectionForSocket socket: GCDAsyncSocket, withManager manager: ConnectionManager) {
         self.socket = socket
         self.manager = manager
+        self.queue = dispatch_queue_create("SocketSendQueue-\(self.socket.connectedPort)", DISPATCH_QUEUE_SERIAL)
         
         super.init()
         
@@ -103,11 +112,9 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
             request.stdIn!.appendData(data)
         } else if let httpRequest = HttpRequest(fromFastCgiRequest: request, withRequestContext: InternalRequestContext(version: request.version, requestId: request.requestId, keepConnectionOpen: request.keepConnectionOpen, connection: self)) {
             
-            // send rquest off to be processed TODO: in other thread
-            self.manager.connection(self, didReceiveHttpRequest: httpRequest)
-            
-            //TODO: _recordContext[socket] = nil
-            _incomingHttpRequests.removeValueForKey(record.header.requestId)
+            dispatch_async(self.queue) {
+                self.manager.connection(self, didReceiveHttpRequest: httpRequest)
+            }
         }
     }
     
@@ -161,6 +168,10 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
         let context = request._requestContext
         let responseWriter = HttpResponseSerializer()
         
+        guard let _ = _incomingHttpRequests.removeValueForKey(context.requestId) else {
+            print("ERROR: Already sent a response for requestId \(context.requestId)!")
+            return
+        }
         guard let responseData = responseWriter.serialize(response: response) else {
             print("ERROR: Unable to build response data!")
             return
@@ -169,6 +180,7 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
         let socket = context.connection.socket
         let requestId = context.requestId
         let keepConnection = context.keepConnectionOpen
+        _incomingHttpRequests.removeValueForKey(context.requestId)
         
         var sent = 0
         while responseData.length > sent {

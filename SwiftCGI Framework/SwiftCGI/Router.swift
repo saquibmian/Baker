@@ -86,10 +86,10 @@ public class Router : _RouteMatchable {
         return nestedRouter
     }
     
-    func routeRequest(var request: HttpRequest) -> (routePattern:MatchedRoute, handler:RequestHandlerOld)? {
-        //print("In Router at path: \(self.route)")
+    func routeRequest(request: HttpRequest) -> (routePattern:MatchedRoute, handler:RequestHandlerOld)? {
+        print("In Router at path: \(self.route)")
         for (pattern, handlerBuilder) in _routes {
-            //print("\tattempting to match against \(pattern.route)")
+            print("\tattempting to match against \(pattern.route)")
             if var match = pattern.match(request.url, forMethod: request.method) {
                 var handler = handlerBuilder()
                 

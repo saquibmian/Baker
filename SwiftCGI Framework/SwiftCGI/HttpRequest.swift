@@ -19,7 +19,7 @@ public class HttpRequest {
     public var headers: [String:String]!
     public var body: NSData?
     public var cookies: [String:String]?
-    
+
     internal init?(fromFastCgiRequest request: FCGIRequest, withRequestContext context: InternalRequestContext ) {
         guard let methodString = request.params["REQUEST_METHOD"] else {
             _requestContext = nil
@@ -57,7 +57,7 @@ public class HttpRequest {
         }
     }
     
-    public func customPropertyForKey(key: String) -> Any? {
+    public func customValue(forKey key: String) -> Any? {
         if let prop = _customProperties[key] {
             return prop
         }
@@ -83,15 +83,26 @@ extension HttpRequest {
     }
     
     public var queryParameters: [String:String]? {
-        if let queryString = self.queryString {
-            var queryParameters = [String:String]()
-            for item in queryString.componentsSeparatedByString("&") {
-                let itemDef = item.componentsSeparatedByString("=")
-                queryParameters[itemDef[0]] = itemDef[1]
-            }
-            return queryParameters
+        var toParse = self.url
+        guard let index = toParse.rangeOfString(RouteCharacter.QueryStringStart) else {
+            return nil
         }
-        return nil
+        toParse = toParse.substringFromIndex(index.startIndex.successor())
+
+        var toReturn = [String:String]()
+        for kvp in toParse.componentsSeparatedByString(RouteCharacter.QueryStringSeparator) {
+            if kvp.hasPrefix(RouteCharacter.QueryStringParameterSeparator) {
+                continue // skip malformed
+            }
+            
+            let pair = kvp.componentsSeparatedByString(RouteCharacter.QueryStringParameterSeparator)
+            let key = pair[0]
+            let value = pair.count == 2 ? pair[1] : ""
+            
+            toReturn[key] = value.urlDecodedString
+        }
+
+        return toReturn
     }
     
     public var contentType: String {
