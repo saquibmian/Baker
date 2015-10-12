@@ -15,9 +15,10 @@ public class Application : HttpRequestDelegate {
     internal init(port: UInt16, requestRouter: Router) {
         self.port = port
         self._router = requestRouter
-        self._httpRequestProcessor = HttpRequestProcessor(withRouter: _router)
         
+        self._httpRequestProcessor = HttpRequestProcessor(withRouter: _router)
         self._fcgi = FCGIServer(port: self.port)
+
         self._fcgi.delegate = self
     }
     
@@ -48,5 +49,6 @@ public class Application : HttpRequestDelegate {
     public func server(didReceiveHttpRequest httpRequest: HttpRequest) {
         _httpRequestProcessor.processHttpRequest(httpRequest)
     }
+    
     
 }

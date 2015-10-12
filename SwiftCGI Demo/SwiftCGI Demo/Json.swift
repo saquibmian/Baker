@@ -9,7 +9,7 @@
 import Foundation
 import SwiftCGI
 
-let jsonRootHandler: RequestHandler = { request in
+let jsonRootHandler: RequestHandlerOld = { request in
     var model = ["hello":"myfriend"]
     
     if let qp = request.queryParameters {
@@ -18,26 +18,26 @@ let jsonRootHandler: RequestHandler = { request in
         }
     }
 
-    return JsonResponse(model: model )!
+    return HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
 }
 
 struct JsonController : Getable, Postable, Patchable {
     
-    internal func get(request: WebRequest) -> WebResponse {
+    internal func get(request: HttpRequest) -> HttpResponse {
         var model: [String:AnyObject] = ["hello":"myfriend"]
         var temp: [String:String]
         
-        temp = [:]
-        for (key,value) in request.matchedRoute.parameters {
-            temp[key] = value
-        }
-        model["route-parameters"] = temp
-
-        temp = [:]
-        for (key,value) in request.parameters {
-            temp[key] = value
-        }
-        model["parameters"] = temp
+//        temp = [:]
+//        for (key,value) in request.matchedRoute.parameters {
+//            temp[key] = value
+//        }
+//        model["route-parameters"] = temp
+//
+//        temp = [:]
+//        for (key,value) in request.parameters {
+//            temp[key] = value
+//        }
+//        model["parameters"] = temp
 
         temp = [:]
         if let qp = request.queryParameters {
@@ -47,30 +47,32 @@ struct JsonController : Getable, Postable, Patchable {
         }
         model["query-parameters"] = temp
         
-        return JsonResponse(model: model )!
+        return HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
     }
 
-    internal func post(request: WebRequest) -> WebResponse {
+    internal func post(request: HttpRequest) -> HttpResponse {
         var model: [String:AnyObject] = ["hello":"myfriend"]
         var temp: [String:String]
         
-        temp = [:]
-        for (key,value) in request.matchedRoute.parameters {
-            temp[key] = value
-        }
-        model["route-parameters"] = temp
-        
-        temp = [:]
-        for (key,value) in request.parameters {
-            temp[key] = value
-        }
-        model["parameters"] = temp
+//        temp = [:]
+//        for (key,value) in request.matchedRoute.parameters {
+//            temp[key] = value
+//        }
+//        model["route-parameters"] = temp
+//        
+//        temp = [:]
+//        for (key,value) in request.parameters {
+//            temp[key] = value
+//        }
+//        model["parameters"] = temp
 
-        temp = [:]
-        for (key,value) in request.cookies {
-            temp[key] = value
+        if let cookies = request.cookies {
+            temp = [:]
+            for (key,value) in cookies {
+                temp[key] = value
+            }
+            model["cookies"] = temp
         }
-        model["cookies"] = temp
         
         temp = [:]
         if let qp = request.queryParameters {
@@ -80,20 +82,22 @@ struct JsonController : Getable, Postable, Patchable {
         }
         model["query-parameters"] = temp
 
-        if let content = request.content {
-            if let body = String(data: content.data, encoding: NSUTF8StringEncoding) {
+        if let body = request.body {
+            if let body = String(data: body, encoding: NSUTF8StringEncoding) {
                 temp = [:]
                 temp["data"] = body
-                temp["content-type"] = content.contentType
-                temp["content-length"] = "\(content.contentLength)"
+                temp["content-type"] = request.contentType
+                temp["content-length"] = "\(request.contentLenth)"
                 model["content"] = temp
             }
         }
         
-        return JsonResponse(model: model )!
+        let toReturn = HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
+        
+        return toReturn
     }
 
-    internal func patch(request: WebRequest) -> WebResponse {
+    internal func patch(request: HttpRequest) -> HttpResponse {
         var model = ["hello":"myfriend"]
         
         if let qp = request.queryParameters {
@@ -102,7 +106,7 @@ struct JsonController : Getable, Postable, Patchable {
             }
         }
         
-        return JsonResponse(model: model )!
+        return HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
     }
 
 }

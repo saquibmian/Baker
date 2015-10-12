@@ -7,19 +7,19 @@
 //
 
 public protocol Getable {
-    func get( request: WebRequest ) -> WebResponse
+    func get( request: HttpRequest ) -> HttpResponse
 }
 public protocol Putable {
-    func put( request: WebRequest ) -> WebResponse
+    func put( request: HttpRequest ) -> HttpResponse
 }
 public protocol Patchable {
-    func patch( request: WebRequest ) -> WebResponse
+    func patch( request: HttpRequest ) -> HttpResponse
 }
 public protocol Deletable {
-    func delete( request: WebRequest ) -> WebResponse
+    func delete( request: HttpRequest ) -> HttpResponse
 }
 public protocol Postable {
-    func post( request: WebRequest ) -> WebResponse
+    func post( request: HttpRequest ) -> HttpResponse
 }
 
 public protocol WebController : Getable, Putable, Patchable, Deletable, Postable {}

@@ -10,7 +10,7 @@ import Foundation
 
 public class Router : _RouteMatchable {
     
-    private var _routes: [(routePattern:_RouteMatchable, handlerBuilder:() -> RequestHandler)] = []
+    private var _routes: [(routePattern:_RouteMatchable, handlerBuilder:() -> RequestHandlerOld)] = []
     
     public let route: String
     let routeComponents: [String]
@@ -52,11 +52,11 @@ public class Router : _RouteMatchable {
         }
     }
     
-    public func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: RequestHandler) {
+    public func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: RequestHandlerOld) {
         self.mapRoute(pattern, forMethod: method, toAction: { return action })
     }
     
-    func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: () -> RequestHandler) {
+    func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: () -> RequestHandlerOld) {
         let joinedPattern = RouteCharacter.Separator + (self.route + RouteCharacter.Separator + pattern)
             .componentsSeparatedByString(RouteCharacter.Separator)
             .filter { !$0.isEmpty && $0 != RouteCharacter.Wildcard }
@@ -76,7 +76,7 @@ public class Router : _RouteMatchable {
         joinedPattern += RouteCharacter.Separator + RouteCharacter.Wildcard
         
         let nestedRouter = Router(forRoute: joinedPattern)
-        let handler: () -> RequestHandler = { return { req in
+        let handler: () -> RequestHandlerOld = { return { req in
             // this handler should never be explicitly invoked
             return HttpResponse(status: HttpStatusCode.InternalServerError)
         } }
@@ -86,7 +86,7 @@ public class Router : _RouteMatchable {
         return nestedRouter
     }
     
-    func routeRequest(var request: WebRequest) -> (routePattern:MatchedRoute, handler:RequestHandler)? {
+    func routeRequest(var request: HttpRequest) -> (routePattern:MatchedRoute, handler:RequestHandlerOld)? {
         //print("In Router at path: \(self.route)")
         for (pattern, handlerBuilder) in _routes {
             //print("\tattempting to match against \(pattern.route)")

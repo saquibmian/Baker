@@ -10,7 +10,7 @@ import Foundation
 import SwiftCGI
 import SwiftCGISessions
 
-let rootHandler: RequestHandler = { request in
+let rootHandler: RequestHandlerOld = { request in
     var extraGreeting = ""
     if let sessionManager = request.getSessionManager() as RequestSessionManager<TransientMemorySessionManager>? {
         var sessionData: SessionData = sessionManager.getData() ?? [:]
@@ -24,5 +24,5 @@ let rootHandler: RequestHandler = { request in
         sessionManager.setData(sessionData)
     }
     
-    return HttpResponse(status: HttpStatusCode.OK, content: HttpContent(contentType: HttpContentType.TextPlain, string: "안녕하세요\(extraGreeting), Swifter! The time is now \(NSDate())") )
+    return HttpResponse(status: HttpStatusCode.OK, content: TextContent("안녕하세요\(extraGreeting), Swifter! The time is now \(NSDate())")! )
 }

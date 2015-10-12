@@ -8,41 +8,98 @@
 
 import Foundation
 
-public struct HttpRequest {
+public class HttpRequest {
 
-    internal let _fastCgiRequest: FCGIRequest
+    internal let _requestContext: InternalRequestContext!
+    internal let _params: [String:String]!
+    internal var _customProperties: [String:Any]!
     
-    public let method: HttpMethod
-    // includes the query string
-    public let url: String
-    public let headers: [String:String]
-    public let body: NSData?
+    public var method: HttpMethod!
+    public var url: String!
+    public var headers: [String:String]!
+    public var body: NSData?
+    public var cookies: [String:String]?
     
-    internal init?(fromFastCgiRequest request: FCGIRequest ) {
-        _fastCgiRequest = request
-        
-        let methodString = _fastCgiRequest.params["REQUEST_METHOD"]!
-        if let parsedMethod = HttpMethod(rawValue: methodString.uppercaseString) {
-            method = parsedMethod
-        } else {
+    internal init?(fromFastCgiRequest request: FCGIRequest, withRequestContext context: InternalRequestContext ) {
+        guard let methodString = request.params["REQUEST_METHOD"] else {
+            _requestContext = nil
+            _params = nil
+            return nil
+        }
+        guard let url = request.params["REQUEST_URI"] else {
+            _requestContext = nil
+            _params = nil
+            return nil
+        }
+        guard let method = HttpMethod(rawValue: methodString.uppercaseString) else {
             // TODO: the HEAD method doesn't show up in the params, so we come here
+            _requestContext = nil
+            _params = nil
             return nil
         }
         
-        url = _fastCgiRequest.path
-        body = _fastCgiRequest.stdIn
+        self._requestContext = context
+        self._params = request.params
         
-        var headers = [String:String]()
-        for key in _fastCgiRequest.params.keys {
-            if let range = key.rangeOfString("HTTP_") where range.startIndex == key.startIndex {
-                let keyToInsert = key[range.endIndex..<key.endIndex]
-                    .stringByReplacingOccurrencesOfString("_", withString: "-")
-                    .capitalizedString
-                
-                headers[keyToInsert] = _fastCgiRequest.params[key]
+        self.url = url
+        self.method = method
+        self.body = request.stdIn
+        self.headers = request.headers
+        
+        self._customProperties = [:]
+        
+        if let cookieString = _params["HTTP_COOKIE"] {
+            cookies = [:]
+            for cookie in cookieString.componentsSeparatedByString("; ") {
+                let cookieDef = cookie.componentsSeparatedByString("=")
+                cookies![cookieDef[0]] = cookieDef[1]
             }
         }
-        self.headers = headers
+    }
+    
+    public func customPropertyForKey(key: String) -> Any? {
+        if let prop = _customProperties[key] {
+            return prop
+        }
+        
+        return nil
+    }
+    
+    public func setCustomValue(value: Any, forKey key: String) {
+        _customProperties[key] = value
     }
     
 }
+
+// MARK: Convenience properties
+
+extension HttpRequest {
+    public var queryString: String? {
+        let splitPath = self.url.componentsSeparatedByString("?")
+        if splitPath.count == 2 {
+            return splitPath.last!
+        }
+        return nil
+    }
+    
+    public var queryParameters: [String:String]? {
+        if let queryString = self.queryString {
+            var queryParameters = [String:String]()
+            for item in queryString.componentsSeparatedByString("&") {
+                let itemDef = item.componentsSeparatedByString("=")
+                queryParameters[itemDef[0]] = itemDef[1]
+            }
+            return queryParameters
+        }
+        return nil
+    }
+    
+    public var contentType: String {
+        return self.headers[HttpHeader.ContentType]!
+    }
+    
+    public var contentLenth: UInt {
+        return UInt(self.headers[HttpHeader.ContentLength]!)!
+    }
+}
+

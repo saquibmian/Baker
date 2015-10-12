@@ -35,13 +35,13 @@ import SwiftCGI
 let SessionIDCookieName = "sessionid"
 
 // Extension to implement session handling properties on Request
-public extension WebRequest {
+public extension HttpRequest {
     public var sessionID: String? {
         get {
-            return cookies[SessionIDCookieName]
+            return cookies?[SessionIDCookieName]
         }
         set(id) {
-            self.cookies[SessionIDCookieName] = id
+            self.cookies?[SessionIDCookieName] = id
         }
     }
     
@@ -52,14 +52,13 @@ public extension WebRequest {
 
 
 // Define a handler function to modify the response accordingly
-public func sessionMiddlewareHandler(var request: WebRequest, let response: WebResponse) throws {
+public func sessionMiddlewareHandler(request: HttpRequest, let response: HttpResponse) throws {
     // Add the session cookie if necessary
     if request.sessionID == nil {
         request.sessionID = NSUUID().UUIDString
     }
     
-    var httpResponse = try response.render()
     if let sessionID = request.sessionID {
-        httpResponse.setValue("\(sessionID); Max-Age=86400", forCookie: SessionIDCookieName)
+        response.setValue("\(sessionID); Max-Age=86400", forCookie: SessionIDCookieName)
     }
 }

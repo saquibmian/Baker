@@ -9,8 +9,8 @@
 import Foundation
 import SwiftCGI
 
-let blogRootHandler: RequestHandler = { request in
+let blogRootHandler: RequestHandlerOld = { request in
     var extraGreeting = ""
     
-    return HttpResponse(status: HttpStatusCode.OK, content: HttpContent( contentType: HttpContentType.TextPlain, string: "Welcome to my blog!") )
+    return HttpResponse(status: HttpStatusCode.OK, content: TextContent("Welcome to my blog!")! )
 }

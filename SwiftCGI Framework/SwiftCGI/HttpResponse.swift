@@ -32,18 +32,22 @@ public class HttpResponse {
     
     public var status: HttpStatusCode
     public var headers: [String:String] = [:]
-
-    public var content: HttpContent?
     public var cookies: [String:String]?
+    public var body: NSData?
+    
+    internal var _customProperties: [String:Any]
     
     // MARK: Init
     public init(status: HttpStatusCode) {
         self.status = status
+        _customProperties = [:]
     }
 
     public init(status: HttpStatusCode, content: HttpContent) {
         self.status = status
-        self.content = content
+        _customProperties = [:]
+
+        self.setContent(to: content)
     }
     
     public func setValue(value: String, forHeader header: String ) {
@@ -64,4 +68,27 @@ public class HttpResponse {
         cookies![key] = value
     }
     
+    public func customPropertyForKey(key: String) -> Any? {
+        if let prop = _customProperties[key] {
+            return prop
+        }
+        
+        return nil
+    }
+    
+    public func setCustomValue(value: Any, forKey key: String) {
+        _customProperties[key] = value
+    }
+
 }
+
+extension HttpResponse {
+    public var contentType: String {
+        return self.headers[HttpHeader.ContentType]!
+    }
+    
+    public var contentLenth: UInt {
+        return UInt(self.headers[HttpHeader.ContentLength]!)!
+    }
+}
+

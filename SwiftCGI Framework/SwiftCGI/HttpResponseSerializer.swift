@@ -19,13 +19,17 @@ internal struct HttpResponseSerializer {
         headers.append("HTTP/1.1 \(response.status.rawValue) \(response.status.description)")
         
         headers.append("Status: \(response.status.rawValue) \(response.status.description)") // neccesary for fastcgi
-        if let content = response.content {
-            headers.append("Content-Type: \(content.contentType); charset=utf-8") // TODO charset not need for non-text content types
-            headers.append("Content-Length: \(content.contentLength)")
-        }
+        
         for header in response.headers.keys {
-            headers.append("\(header): \(response.headers[header])")
+            if header == HttpHeader.ContentLength {
+                continue
+            }
+            if header == HttpHeader.ContentType {
+                continue
+            }
+            headers.append("\(header): \(response.headers[header]!)")
         }
+        
         if let cookies = response.cookies {
             let cookieHeaderBuilder = HttpCookieHeadersBuilder()
             for header in cookieHeaderBuilder.build(cookies) {
@@ -33,10 +37,15 @@ internal struct HttpResponseSerializer {
             }
         }
         
+        if let _ = response.body {
+            headers.append("Content-Type: \(response.contentType); charset=utf-8") // TODO charset not need for non-text content types
+            headers.append("Content-Length: \(response.contentLenth)")
+        }
+
         headers.append(HTTPNewline)
         
         let responseString: String = {
-            if let data = response.content, let body = data.dataAsString {
+            if let data = response.body, let body = String(data: data, encoding: NSUTF8StringEncoding) {
                 return headers.joinWithSeparator(HTTPNewline) + body
             }
             return headers.joinWithSeparator(HTTPNewline)
