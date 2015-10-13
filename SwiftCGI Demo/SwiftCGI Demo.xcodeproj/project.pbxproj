@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		38350C5C1BCC51A800DFECEF /* BodyParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38350C5B1BCC51A800DFECEF /* BodyParser.swift */; settings = {ASSET_TAGS = (); }; };
+		38350C5E1BCC51CD00DFECEF /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38350C5D1BCC51CD00DFECEF /* Logger.swift */; settings = {ASSET_TAGS = (); }; };
+		38350C601BCC51FA00DFECEF /* Authorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38350C5F1BCC51FA00DFECEF /* Authorizer.swift */; settings = {ASSET_TAGS = (); }; };
 		386934D91BC8CC5200B24A5C /* Json.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934D81BC8CC5200B24A5C /* Json.swift */; settings = {ASSET_TAGS = (); }; };
 		CE9B207C1A68E433003DD00E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9B207B1A68E433003DD00E /* AppDelegate.swift */; };
 		CE9B20801A68E433003DD00E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CE9B207F1A68E433003DD00E /* Images.xcassets */; };
@@ -29,6 +32,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		38350C5B1BCC51A800DFECEF /* BodyParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BodyParser.swift; sourceTree = "<group>"; };
+		38350C5D1BCC51CD00DFECEF /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		38350C5F1BCC51FA00DFECEF /* Authorizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Authorizer.swift; sourceTree = "<group>"; };
 		386934D81BC8CC5200B24A5C /* Json.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Json.swift; sourceTree = "<group>"; };
 		CE9B20761A68E433003DD00E /* SwiftCGI Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SwiftCGI Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE9B207A1A68E433003DD00E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -64,6 +70,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		38350C581BCC513E00DFECEF /* Middleware */ = {
+			isa = PBXGroup;
+			children = (
+				38350C5B1BCC51A800DFECEF /* BodyParser.swift */,
+				38350C5D1BCC51CD00DFECEF /* Logger.swift */,
+				38350C5F1BCC51FA00DFECEF /* Authorizer.swift */,
+			);
+			name = Middleware;
+			sourceTree = "<group>";
+		};
 		CE9B206D1A68E433003DD00E = {
 			isa = PBXGroup;
 			children = (
@@ -87,6 +103,7 @@
 		CE9B20781A68E433003DD00E /* SwiftCGI Demo */ = {
 			isa = PBXGroup;
 			children = (
+				38350C581BCC513E00DFECEF /* Middleware */,
 				CE9B207B1A68E433003DD00E /* AppDelegate.swift */,
 				CE9B207F1A68E433003DD00E /* Images.xcassets */,
 				CE9B20811A68E433003DD00E /* Main.storyboard */,
@@ -233,8 +250,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				E99E53911AB7B2EC00810B12 /* Blog.swift in Sources */,
+				38350C601BCC51FA00DFECEF /* Authorizer.swift in Sources */,
+				38350C5E1BCC51CD00DFECEF /* Logger.swift in Sources */,
 				E99E538E1AB7B06100810B12 /* Root.swift in Sources */,
 				CE9B207C1A68E433003DD00E /* AppDelegate.swift in Sources */,
+				38350C5C1BCC51A800DFECEF /* BodyParser.swift in Sources */,
 				386934D91BC8CC5200B24A5C /* Json.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

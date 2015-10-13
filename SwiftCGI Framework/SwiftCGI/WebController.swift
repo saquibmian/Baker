@@ -6,20 +6,27 @@
 //  Copyright © 2015 Ian Wagner. All rights reserved.
 //
 
-public protocol Getable {
-    func get( request: HttpRequest ) -> HttpResponse
+//public typealias ControllerMethod = () -> HttpResponse
+
+public protocol Getable : WebController{
+    func get() -> HttpResponse
 }
-public protocol Putable {
-    func put( request: HttpRequest ) -> HttpResponse
+public protocol Putable: WebController{
+    func put() -> HttpResponse
 }
-public protocol Patchable {
-    func patch( request: HttpRequest ) -> HttpResponse
+public protocol Patchable : WebController{
+    func patch() -> HttpResponse
 }
-public protocol Deletable {
-    func delete( request: HttpRequest ) -> HttpResponse
+public protocol Deletable : WebController{
+    func delete() -> HttpResponse
 }
-public protocol Postable {
-    func post( request: HttpRequest ) -> HttpResponse
+public protocol Postable : WebController{
+    func post() -> HttpResponse
 }
 
-public protocol WebController : Getable, Putable, Patchable, Deletable, Postable {}
+public protocol WebController {
+    var currentRequest: HttpRequest { get }
+    var matchedRoute: MatchedRoute { get }
+    
+    init(withRequest request: HttpRequest, foRoute route: MatchedRoute)
+}

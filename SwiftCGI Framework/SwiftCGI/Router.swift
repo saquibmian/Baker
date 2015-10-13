@@ -27,28 +27,42 @@ public class Router : _RouteMatchable {
             .filter { !$0.isEmpty }
     }
     
-    public func mapRoute(pattern: String, toController controller: () -> Any) {
-        let instantiatedController = controller()
-
-        if let _ = instantiatedController as? Getable {
-            let action = { (controller() as! Getable).get }
+    // controller will be instantiated once, after that it'll be per request
+    public func mapController<T: WebController>(pattern: String, ofType: T.Type) {
+        if let controller = ofType as? Getable.Type {
+            let action:  RequestHandlerOld = { req, route in
+                let controller = controller.init(withRequest: req, foRoute: route)
+                return controller.get()
+            }
             self.mapRoute(pattern, forMethod: HttpMethod.Get, toAction: action)
         }
-        if let _ = instantiatedController as? Putable {
-            let action = { (controller() as! Putable).put }
+        if let controller = ofType as? Putable.Type {
+            let action:  RequestHandlerOld = { req, route in
+                let controller = controller.init(withRequest: req, foRoute: route)
+                return controller.put()
+            }
             self.mapRoute(pattern, forMethod: HttpMethod.Put, toAction: action)
         }
-        if let _ = instantiatedController as? Patchable {
-            let action = { (controller() as! Patchable).patch }
+        if let controller = ofType as? Postable.Type {
+            let action:  RequestHandlerOld = { req, route in
+                let controller = controller.init(withRequest: req, foRoute: route)
+                return controller.post()
+            }
+            self.mapRoute(pattern, forMethod: HttpMethod.Post, toAction: action)
+        }
+        if let controller = ofType as? Patchable.Type {
+            let action:  RequestHandlerOld = { req, route in
+                let controller = controller.init(withRequest: req, foRoute: route)
+                return controller.patch()
+            }
             self.mapRoute(pattern, forMethod: HttpMethod.Patch, toAction: action)
         }
-        if let _ = instantiatedController as? Deletable {
-            let action = { (controller() as! Deletable).delete }
+        if let controller = ofType as? Deletable.Type {
+            let action:  RequestHandlerOld = { req, route in
+                let controller = controller.init(withRequest: req, foRoute: route)
+                return controller.delete()
+            }
             self.mapRoute(pattern, forMethod: HttpMethod.Delete, toAction: action)
-        }
-        if let _ = instantiatedController as? Postable {
-            let action = { (controller() as! Postable).post }
-            self.mapRoute(pattern, forMethod: HttpMethod.Post, toAction: action)
         }
     }
     
@@ -89,7 +103,6 @@ public class Router : _RouteMatchable {
     func routeRequest(request: HttpRequest) -> (routePattern:MatchedRoute, handler:RequestHandlerOld)? {
         print("In Router at path: \(self.route)")
         for (pattern, handlerBuilder) in _routes {
-            print("\tattempting to match against \(pattern.route)")
             if var match = pattern.match(request.url, forMethod: request.method) {
                 var handler = handlerBuilder()
                 
@@ -138,4 +151,26 @@ internal struct RoutePattern : _RouteMatchable {
         return self.method == method
     }
 }
+
+//internal struct ControllerRoutePattern : _RouteMatchable {
+//    let route: String
+//    internal let controllerBuilder: () -> WebController
+//    internal let routeComponents: [String]
+//    
+//    init(route: String, withBuilder builder: () -> WebController) {
+//        self.route = route
+//        self.controllerBuilder = builder
+//        
+//        self.routeComponents = self.route
+//            .componentsSeparatedByString(RouteComponentSeparator)
+//            .filter { !$0.isEmpty }
+//    }
+//    
+//    internal func respondsToMethod(method: HttpMethod) -> Bool {
+//        if let _ = controllerBuilder as? (() -> Getable) {
+//                return method == HttpMethod.Get
+//        }
+//        return false
+//    }
+//}
 

@@ -28,7 +28,9 @@ internal protocol _RouteMatchable : RouteMatchable {
 
 extension _RouteMatchable {
     func match(url: String, forMethod method: HttpMethod) -> MatchedRoute? {
+        print("...attempting to match against \(self.route)")
         guard self.respondsToMethod(method) else {
+            print("...route does not respond to \(method.rawValue.uppercaseString)")
             return nil
         }
         
@@ -80,6 +82,7 @@ extension _RouteMatchable {
             ++componentIndex
         }
         
+        print("matched against \(self.route)")
         return MatchedRoute(target: self, withParameters: parameters, andWildcards: wildcards)
     }
 }

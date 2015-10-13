@@ -1,10 +1,19 @@
 //
 //  BodyParser.swift
+//  SwiftCGI Demo
+//
+//  Created by Saquib Mian on 2015-10-12.
+//  Copyright © 2015 Ian Wagner. All rights reserved.
+//
+//
+//  BodyParser.swift
 //  SwiftCGI
 //
 //  Created by Saquib Mian on 2015-10-12.
 //  Copyright © 2015 Ian Wagner. All rights reserved.
 //
+
+import SwiftCGI
 
 public class BodyParser : RequestHandler {
     internal static let BodyParserKey = "body-parser-body"
@@ -35,7 +44,7 @@ public class BodyParser : RequestHandler {
             }
             
             if let body = request.customBody as? AnyObject, let content = JsonContent(model: body) {
-                    response.setContent(to: content)
+                response.setContent(to: content)
             } else {
                 //abort request
             }

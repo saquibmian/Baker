@@ -40,7 +40,7 @@ internal class HttpRequestProcessor {
         if response == nil {
             if let requestHandler = _router.routeRequest(request) {
                 matchedRoute = requestHandler.routePattern
-                response = requestHandler.handler(request)
+                response = requestHandler.handler(request, matchedRoute!)
             } else {
                 response = HttpResponse(status: HttpStatusCode.NotFound, content: TextContent("Not found! Booooo :( ")! )
             }

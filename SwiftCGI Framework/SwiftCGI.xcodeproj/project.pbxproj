@@ -10,7 +10,6 @@
 		38385F081BCA9DB500A356FA /* HttpRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38385F071BCA9DB500A356FA /* HttpRequestProcessor.swift */; settings = {ASSET_TAGS = (); }; };
 		38385F0A1BCA9DD900A356FA /* Application.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38385F091BCA9DD900A356FA /* Application.swift */; settings = {ASSET_TAGS = (); }; };
 		38385F0C1BCB8F0400A356FA /* FastCGIConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38385F0B1BCB8F0400A356FA /* FastCGIConnection.swift */; settings = {ASSET_TAGS = (); }; };
-		38385F0E1BCB8FA000A356FA /* BodyParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38385F0D1BCB8FA000A356FA /* BodyParser.swift */; settings = {ASSET_TAGS = (); }; };
 		386934D31BC8A4B700B24A5C /* HttpStructures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934D21BC8A4B700B24A5C /* HttpStructures.swift */; settings = {ASSET_TAGS = (); }; };
 		386934D51BC8C57B00B24A5C /* HttpResponseSerializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934D41BC8C57B00B24A5C /* HttpResponseSerializer.swift */; settings = {ASSET_TAGS = (); }; };
 		386934D71BC8C64200B24A5C /* HttpCookieHeadersBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386934D61BC8C64200B24A5C /* HttpCookieHeadersBuilder.swift */; settings = {ASSET_TAGS = (); }; };
@@ -57,7 +56,6 @@
 		38385F071BCA9DB500A356FA /* HttpRequestProcessor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpRequestProcessor.swift; sourceTree = "<group>"; };
 		38385F091BCA9DD900A356FA /* Application.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Application.swift; sourceTree = "<group>"; };
 		38385F0B1BCB8F0400A356FA /* FastCGIConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FastCGIConnection.swift; sourceTree = "<group>"; };
-		38385F0D1BCB8FA000A356FA /* BodyParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BodyParser.swift; sourceTree = "<group>"; };
 		386934D21BC8A4B700B24A5C /* HttpStructures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpStructures.swift; sourceTree = "<group>"; };
 		386934D41BC8C57B00B24A5C /* HttpResponseSerializer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpResponseSerializer.swift; sourceTree = "<group>"; };
 		386934D61BC8C64200B24A5C /* HttpCookieHeadersBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpCookieHeadersBuilder.swift; sourceTree = "<group>"; };
@@ -129,7 +127,6 @@
 			isa = PBXGroup;
 			children = (
 				38385F091BCA9DD900A356FA /* Application.swift */,
-				38385F0D1BCB8FA000A356FA /* BodyParser.swift */,
 				38385F0B1BCB8F0400A356FA /* FastCGIConnection.swift */,
 				CEEBFD741A5A256E0014D017 /* FCGIRecord.swift */,
 				CEEBFD771A5A57DC0014D017 /* FCGIRequest.swift */,
@@ -305,7 +302,6 @@
 				CE052E401A5CF85500F8DA34 /* HttpResponse.swift in Sources */,
 				386934E11BC8FF4C00B24A5C /* WebRequest.swift in Sources */,
 				38385F0A1BCA9DD900A356FA /* Application.swift in Sources */,
-				38385F0E1BCB8FA000A356FA /* BodyParser.swift in Sources */,
 				386934DF1BC8FF2C00B24A5C /* WebController.swift in Sources */,
 				E99E5FDF1AA2D8B600BED31D /* Router.swift in Sources */,
 				CEEBFD891A5A591F0014D017 /* GCDAsyncSocket.m in Sources */,

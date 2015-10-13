@@ -41,10 +41,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func mapRoutes(router: Router) {
         let root = router.createNestedRouter(atBaseRoute: "/root/")
         let rootRoot = root.createNestedRouter(atBaseRoute: "/root/")
+        
         rootRoot.mapRoute("/root", forMethod: HttpMethod.Get, toAction: rootHandler)
+        root.mapRoute("/test", forMethod: HttpMethod.Get) { req, route in
+            return HttpResponse(status: HttpStatusCode.MovedPermanently)
+        }
         rootRoot.mapRoute("/root/blog", forMethod: HttpMethod.Get, toAction: blogRootHandler)
-        rootRoot.mapRoute("/root/json/", toController: { return JsonController() } )
-        rootRoot.mapRoute("/root/json/:id/:woah", toController: { return JsonController() } )
+        
+        rootRoot.mapController("/root/json/:id/:woah", ofType: JsonController.self)
     }
     
     func applicationDidFinishLaunching(aNotification: NSNotification) {
@@ -74,40 +78,3 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
 }
-
-private struct Logger : RequestHandler {
-    private static let ResponseTimeKey = "response-time-key"
-    
-    func didReceiveRequest(request: HttpRequest) -> HttpResponse? {
-        request.setCustomValue(NSDate(), forKey: Logger.ResponseTimeKey)
-        return nil
-    }
-    
-    func willSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
-        // do nothing
-    }
-    
-    func didSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
-        if let property = request.customValue(forKey: Logger.ResponseTimeKey), let startedAt = property as? NSDate {
-            let durationMilliseconds = Int(startedAt.timeIntervalSinceNow) * -1000
-            let method = request.method.rawValue.uppercaseString
-            
-            print("\(method) \(request.url) \(durationMilliseconds)ms")
-        }
-    }
-}
-
-private struct Authorizer : RequestHandler {
-    func didReceiveRequest(request: HttpRequest) -> HttpResponse? {
-        return HttpResponse(status: HttpStatusCode.Forbidden)
-    }
-    
-    func willSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
-        // do nothing
-    }
-    
-    func didSendResponse(response: HttpResponse, forRequest request: HttpRequest, andRoute route: MatchedRoute?) {
-        // do nothing
-    }
-}
-

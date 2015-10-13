@@ -6,67 +6,50 @@
 //  Copyright (c) 2015 Ian Wagner. All rights reserved.
 //
 
-import Foundation
 import SwiftCGI
 
-let jsonRootHandler: RequestHandlerOld = { request in
-    var model = ["hello":"myfriend"]
+struct JsonController : Getable, Postable, Patchable, WebController {
     
-    if let qp = request.queryParameters {
-        for (key,value) in qp {
-            model[key] = value
-        }
+    let currentRequest: HttpRequest
+    let matchedRoute: MatchedRoute
+    
+    internal init(withRequest request: HttpRequest, foRoute route: MatchedRoute) {
+        self.currentRequest = request
+        self.matchedRoute = route
     }
-
-    return HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
-}
-
-struct JsonController : Getable, Postable, Patchable {
     
-    internal func get(request: HttpRequest) -> HttpResponse {
+    internal func get() -> HttpResponse {
         var model: [String:AnyObject] = ["hello":"myfriend"]
         var temp: [String:String]
         
-//        temp = [:]
-//        for (key,value) in request.matchedRoute.parameters {
-//            temp[key] = value
-//        }
-//        model["route-parameters"] = temp
-//
-//        temp = [:]
-//        for (key,value) in request.parameters {
-//            temp[key] = value
-//        }
-//        model["parameters"] = temp
+        temp = [:]
+        for (key,value) in self.matchedRoute.parameters {
+            temp[key] = value
+        }
+        model["route-parameters"] = temp
 
         temp = [:]
-        if let qp = request.queryParameters {
+        if let qp = self.currentRequest.queryParameters {
             for (key,value) in qp {
                 temp[key] = value
             }
         }
         model["query-parameters"] = temp
         
-        return HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
+        return json(model)
     }
 
-    internal func post(request: HttpRequest) -> HttpResponse {
+    internal func post() -> HttpResponse {
         var model: [String:AnyObject] = ["hello":"myfriend"]
         var temp: [String:String]
         
-//        temp = [:]
-//        for (key,value) in request.matchedRoute.parameters {
-//            temp[key] = value
-//        }
-//        model["route-parameters"] = temp
-//        
-//        temp = [:]
-//        for (key,value) in request.parameters {
-//            temp[key] = value
-//        }
-//        model["parameters"] = temp
+        temp = [:]
+        for (key,value) in self.matchedRoute.parameters {
+            temp[key] = value
+        }
+        model["route-parameters"] = temp
 
-        if let cookies = request.cookies {
+        if let cookies = self.currentRequest.cookies {
             temp = [:]
             for (key,value) in cookies {
                 temp[key] = value
@@ -75,38 +58,36 @@ struct JsonController : Getable, Postable, Patchable {
         }
         
         temp = [:]
-        if let qp = request.queryParameters {
+        if let qp = self.currentRequest.queryParameters {
             for (key,value) in qp {
                 temp[key] = value
             }
         }
         model["query-parameters"] = temp
 
-        if let body = request.body {
+        if let body = self.currentRequest.body {
             if let body = String(data: body, encoding: NSUTF8StringEncoding) {
                 temp = [:]
                 temp["data"] = body
-                temp["content-type"] = request.contentType
-                temp["content-length"] = "\(request.contentLenth)"
+                temp["content-type"] = self.currentRequest.contentType
+                temp["content-length"] = "\(self.currentRequest.contentLenth)"
                 model["content"] = temp
             }
         }
         
-        let toReturn = HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
-        
-        return toReturn
+        return json(model)
     }
 
-    internal func patch(request: HttpRequest) -> HttpResponse {
+    internal func patch() -> HttpResponse {
         var model = ["hello":"myfriend"]
         
-        if let qp = request.queryParameters {
+        if let qp = self.currentRequest.queryParameters {
             for (key,value) in qp {
                 model[key] = value
             }
         }
         
-        return HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
+        return json(model)
     }
 
 }
