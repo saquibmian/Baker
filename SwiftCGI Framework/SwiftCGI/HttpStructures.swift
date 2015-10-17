@@ -12,11 +12,9 @@ public enum HttpMethod : String  {
     case Patch = "PATCH"
     case Put = "PUT"
     case Delete = "DELETE"
-    
-    static let allValues = [Get,Post,Patch,Put,Delete]
 }
 
-public struct HttpContentType {
+public enum HttpContentType {
     public static let TextPlain = "text/plain"
     public static let ApplicationJSON = "application/json"
     public static let TextHTML = "text/html"

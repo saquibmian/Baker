@@ -17,7 +17,7 @@ public class Application : HttpRequestReceiverDelegate {
         self._router = requestRouter
         
         self._httpRequestProcessor = HttpRequestProcessor(withRouter: _router)
-        self._requestReciever = FCGIServer(port: self.port)
+        self._requestReciever = FastCGIServer(port: self.port)
 
         self._requestReciever.delegate = self
     }

@@ -28,37 +28,6 @@
 //  POSSIBILITY OF SUCH DAMAGE.
 //
 
-let FCGITimeout: NSTimeInterval = 5
-
-// TODO: this should probably be a struct...
-
-//public protocol RequestContext {
-//    var webRequest: WebRequest { get }
-//    var webResponse: WebResponse { get set }
-//}
-
-//public class FCGIRequestContext : RequestContext{
-//    public var webRequest: WebRequest
-//    public var webResponse: WebResponse
-//    
-//    internal let version: FCGIVersion
-//    internal let requestId: UInt16
-//    internal let keepConnectionOpen: Bool
-//    internal let socket: GCDAsyncSocket
-//    
-//    init(webRequest: WebRequest, webResponse: WebResponse, fcgiVersion version: FCGIVersion, fcgiRequestId requestId: UInt16, keepConnectionOpen: Bool, socket: GCDAsyncSocket) {
-//        self.webRequest = webRequest
-//        self.webResponse = webResponse
-//        
-//        self.version = version
-//        self.requestId = requestId
-//        self.socket = socket
-//        self.keepConnectionOpen = keepConnectionOpen
-//    }
-//}
-
-
-
 internal class FCGIRequest {
     internal let version: FCGIVersion
     internal let requestId: UInt16
@@ -88,7 +57,4 @@ internal class FCGIRequest {
         
         return toReturn
     }
-    
 }
-
-

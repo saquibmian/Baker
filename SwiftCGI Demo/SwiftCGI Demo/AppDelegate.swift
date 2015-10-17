@@ -59,12 +59,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         do {
             try app.start()
+            setupMenubar()
             print("Started SwiftCGI server on port \(app.port)")
         } catch {
             print("Failed to start SwiftCGI server")
             exit(1)
         }
-        
+    }
+    
+    private func setupMenubar() {
         statusItem.title = "SwiftCGI"   // TODO: Use a logo
         let menu = NSMenu()
         menu.addItemWithTitle("Stop Server", action: Selector("killServer:"), keyEquivalent: "")

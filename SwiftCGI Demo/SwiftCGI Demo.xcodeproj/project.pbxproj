@@ -80,6 +80,14 @@
 			name = Middleware;
 			sourceTree = "<group>";
 		};
+		38350C611BCC852F00DFECEF /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				386934D81BC8CC5200B24A5C /* Json.swift */,
+			);
+			name = Controllers;
+			sourceTree = "<group>";
+		};
 		CE9B206D1A68E433003DD00E = {
 			isa = PBXGroup;
 			children = (
@@ -103,6 +111,7 @@
 		CE9B20781A68E433003DD00E /* SwiftCGI Demo */ = {
 			isa = PBXGroup;
 			children = (
+				38350C611BCC852F00DFECEF /* Controllers */,
 				38350C581BCC513E00DFECEF /* Middleware */,
 				CE9B207B1A68E433003DD00E /* AppDelegate.swift */,
 				CE9B207F1A68E433003DD00E /* Images.xcassets */,
@@ -143,7 +152,6 @@
 			children = (
 				E99E538D1AB7B06100810B12 /* Root.swift */,
 				E99E53901AB7B2EC00810B12 /* Blog.swift */,
-				386934D81BC8CC5200B24A5C /* Json.swift */,
 			);
 			name = Handlers;
 			sourceTree = "<group>";

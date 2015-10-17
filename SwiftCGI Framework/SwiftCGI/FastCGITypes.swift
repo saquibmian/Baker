@@ -28,56 +28,16 @@
 //  POSSIBILITY OF SUCH DAMAGE.
 //
 
-// MARK: Request/response lifecycle
+typealias FCGIApplicationStatus = UInt32
 
-//
-// Preware:    Invoked BEFORE the request is handled or a response is generated.
-//             Preware returns an (optionally modified) FCGIRequest; use preware
-//             to modify the request before it is handled.
-// Middleware: Invoked AFTER the request handler has been called, but before
-//             the response is sent back to the client. Middleware allows you to
-//             alter the response (usually by doing things like setting cookies).
-// Postware:   Invoked AFTER the request has completed and the response has been
-//             sent to the client.
-//
-
-// TODO: Make these Request instances generic once Swift sees the light and lets us do generic
-// typeclasses
-
-public typealias RequestHandlerOld = (HttpRequest,MatchedRoute) -> HttpResponse
-
-public typealias RequestPrewareHandler = HttpRequest throws -> Void
-public typealias RequestMiddlewareHandler = (HttpRequest, HttpResponse) throws -> Void
-public typealias RequestPostwareHandler = (HttpRequest, HttpResponse) throws -> Void
-
-
-// MARK: Low-level stuff
-
-public typealias FCGIApplicationStatus = UInt32
-
-
-public enum FCGIOutputStream: UInt8 {
-    case Stdout = 6
-}
-
-public enum FCGIProtocolStatus: UInt8 {
+enum FCGIProtocolStatus: UInt8 {
     case RequestComplete = 0
-    //case FCGI_CANT_MPX_CONN = 1
-    //case Overloaded = 2
     case UnknownRole = 3
 }
-
-
-// MARK: Private types
 
 typealias FCGIRequestID = UInt16
 typealias FCGIContentLength = UInt16
 typealias FCGIPaddingLength = UInt8
-//typealias FCGIShortNameLength = UInt8
-//typealias FCGILongNameLength = UInt32
-//typealias FCGIShortValueLength = UInt8
-//typealias FCGILongValueLength = UInt32
-
 
 enum FCGIVersion: UInt8 {
     case Version1 = 1

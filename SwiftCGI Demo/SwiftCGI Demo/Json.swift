@@ -8,15 +8,12 @@
 
 import SwiftCGI
 
-struct JsonController : Getable, Postable, Patchable, WebController {
+struct JsonController : Getable, Postable, Patchable {
     
-    let currentRequest: HttpRequest
-    let matchedRoute: MatchedRoute
+    var currentRequest: HttpRequest!
+    var matchedRoute: MatchedRoute!
     
-    internal init(withRequest request: HttpRequest, foRoute route: MatchedRoute) {
-        self.currentRequest = request
-        self.matchedRoute = route
-    }
+    init() {}
     
     internal func get() -> HttpResponse {
         var model: [String:AnyObject] = ["hello":"myfriend"]

@@ -6,8 +6,6 @@
 //  Copyright © 2015 Ian Wagner. All rights reserved.
 //
 
-//public typealias ControllerMethod = () -> HttpResponse
-
 public protocol Getable : WebController{
     func get() -> HttpResponse
 }
@@ -25,8 +23,8 @@ public protocol Postable : WebController{
 }
 
 public protocol WebController {
-    var currentRequest: HttpRequest { get }
-    var matchedRoute: MatchedRoute { get }
+    var currentRequest: HttpRequest! { get set }
+    var matchedRoute: MatchedRoute! { get set }
     
-    init(withRequest request: HttpRequest, foRoute route: MatchedRoute)
+    init()
 }

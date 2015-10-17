@@ -25,4 +25,9 @@ extension WebController {
         let toReturn = HttpResponse(status: HttpStatusCode.OK, content: JsonContent(model: model )!)
         return toReturn
     }
+    
+    public func json(model: AnyObject, withStatusCode statusCode: HttpStatusCode) -> HttpResponse {
+        let toReturn = HttpResponse(status: statusCode, content: JsonContent(model: model )!)
+        return toReturn
+    }
 }

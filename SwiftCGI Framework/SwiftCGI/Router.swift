@@ -8,9 +8,11 @@
 
 import Foundation
 
+public typealias ActionMethod = (HttpRequest,MatchedRoute) -> HttpResponse
+
 public class Router : _RouteMatchable {
     
-    private var _routes: [(routePattern:_RouteMatchable, handlerBuilder:() -> RequestHandlerOld)] = []
+    private var _routes: [(routePattern:_RouteMatchable, handlerBuilder:() -> ActionMethod)] = []
     
     public let route: String
     let routeComponents: [String]
@@ -30,47 +32,57 @@ public class Router : _RouteMatchable {
     // controller will be instantiated once, after that it'll be per request
     public func mapController<T: WebController>(pattern: String, ofType: T.Type) {
         if let controller = ofType as? Getable.Type {
-            let action:  RequestHandlerOld = { req, route in
-                let controller = controller.init(withRequest: req, foRoute: route)
+            let action:  ActionMethod = { req, route in
+                var controller = controller.init()
+                controller.currentRequest = req
+                controller.matchedRoute = route
                 return controller.get()
             }
             self.mapRoute(pattern, forMethod: HttpMethod.Get, toAction: action)
         }
         if let controller = ofType as? Putable.Type {
-            let action:  RequestHandlerOld = { req, route in
-                let controller = controller.init(withRequest: req, foRoute: route)
+            let action:  ActionMethod = { req, route in
+                var controller = controller.init()
+                controller.currentRequest = req
+                controller.matchedRoute = route
                 return controller.put()
             }
             self.mapRoute(pattern, forMethod: HttpMethod.Put, toAction: action)
         }
         if let controller = ofType as? Postable.Type {
-            let action:  RequestHandlerOld = { req, route in
-                let controller = controller.init(withRequest: req, foRoute: route)
+            let action:  ActionMethod = { req, route in
+                var controller = controller.init()
+                controller.currentRequest = req
+                controller.matchedRoute = route
                 return controller.post()
             }
             self.mapRoute(pattern, forMethod: HttpMethod.Post, toAction: action)
         }
         if let controller = ofType as? Patchable.Type {
-            let action:  RequestHandlerOld = { req, route in
-                let controller = controller.init(withRequest: req, foRoute: route)
+            let action:  ActionMethod = { req, route in
+                var controller = controller.init()
+                controller.currentRequest = req
+                controller.matchedRoute = route
                 return controller.patch()
             }
             self.mapRoute(pattern, forMethod: HttpMethod.Patch, toAction: action)
         }
         if let controller = ofType as? Deletable.Type {
-            let action:  RequestHandlerOld = { req, route in
-                let controller = controller.init(withRequest: req, foRoute: route)
+            let action:  ActionMethod = { req, route in
+                var controller = controller.init()
+                controller.currentRequest = req
+                controller.matchedRoute = route
                 return controller.delete()
             }
             self.mapRoute(pattern, forMethod: HttpMethod.Delete, toAction: action)
         }
     }
     
-    public func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: RequestHandlerOld) {
+    public func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: ActionMethod) {
         self.mapRoute(pattern, forMethod: method, toAction: { return action })
     }
     
-    func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: () -> RequestHandlerOld) {
+    func mapRoute(pattern: String, forMethod method: HttpMethod, toAction action: () -> ActionMethod) {
         let joinedPattern = RouteCharacter.Separator + (self.route + RouteCharacter.Separator + pattern)
             .componentsSeparatedByString(RouteCharacter.Separator)
             .filter { !$0.isEmpty && $0 != RouteCharacter.Wildcard }
@@ -90,7 +102,7 @@ public class Router : _RouteMatchable {
         joinedPattern += RouteCharacter.Separator + RouteCharacter.Wildcard
         
         let nestedRouter = Router(forRoute: joinedPattern)
-        let handler: () -> RequestHandlerOld = { return { req in
+        let handler: () -> ActionMethod = { return { req in
             // this handler should never be explicitly invoked
             return HttpResponse(status: HttpStatusCode.InternalServerError)
         } }
@@ -100,7 +112,7 @@ public class Router : _RouteMatchable {
         return nestedRouter
     }
     
-    func routeRequest(request: HttpRequest) -> (routePattern:MatchedRoute, handler:RequestHandlerOld)? {
+    func routeRequest(request: HttpRequest) -> (routePattern:MatchedRoute, handler:ActionMethod)? {
         print("In Router at path: \(self.route)")
         for (pattern, handlerBuilder) in _routes {
             if var match = pattern.match(request.url, forMethod: request.method) {

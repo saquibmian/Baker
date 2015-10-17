@@ -290,3 +290,32 @@ extension NSData {
     }
 }
 
+public class UTF8Encoding {
+    public static func decode(bytes: [UInt8]) -> String {
+        var encodedString = ""
+        var decoder = UTF8()
+        var generator = bytes.generate()
+        
+        var finished: Bool = false
+        repeat {
+            let decodingResult = decoder.decode(&generator)
+            switch decodingResult {
+            case .Result(let char):
+                encodedString.append(char)
+            default:
+                finished = true
+            }
+        } while (!finished)
+        
+        return encodedString
+    }
+    
+    public static func encode(str: String) -> [UInt8] {
+        var decodedBytes = [UInt8]()
+        for b in str.utf8 {
+            decodedBytes.append(b)
+        }
+        return decodedBytes
+    }
+}
+

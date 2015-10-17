@@ -105,12 +105,25 @@ extension HttpRequest {
         return toReturn
     }
     
-    public var contentType: String {
-        return self.headers[HttpHeader.ContentType]!
+    public var contentType: String? {
+        get {
+            return self.headers[HttpHeader.ContentType]
+        }
+        set(value) {
+            self.headers[HttpHeader.ContentType] = value!
+        }
     }
     
-    public var contentLenth: UInt {
-        return UInt(self.headers[HttpHeader.ContentLength]!)!
+    public var contentLenth: UInt? {
+        get {
+            guard let rawContentLength = self.headers[HttpHeader.ContentLength] else {
+                return nil
+            }
+            return UInt(rawContentLength)
+        }
+        set(value) {
+            self.headers[HttpHeader.ContentLength] = "\(value!)"
+        }
     }
 }
 

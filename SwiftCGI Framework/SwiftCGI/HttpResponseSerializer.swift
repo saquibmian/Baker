@@ -38,8 +38,8 @@ internal struct HttpResponseSerializer {
         }
         
         if let _ = response.body {
-            headers.append("Content-Type: \(response.contentType); charset=utf-8") // TODO charset not need for non-text content types
-            headers.append("Content-Length: \(response.contentLenth)")
+            headers.append("Content-Type: \(response.contentType!); charset=utf-8") // TODO charset not need for non-text content types
+            headers.append("Content-Length: \(response.contentLenth!)")
         }
 
         headers.append(HTTPNewline)

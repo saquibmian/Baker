@@ -28,21 +28,19 @@
 //  POSSIBILITY OF SUCH DAMAGE.
 //
 
-
-
 protocol HttpRequestReceiver {
     var delegate: HttpRequestReceiverDelegate! { get set }
     func start() throws
 }
 
-public protocol HttpRequestReceiverDelegate {
+protocol HttpRequestReceiverDelegate {
     func server(didReceiveHttpRequest httpRequest: HttpRequest)
 }
 
 // NOTE: This class muse inherit from NSObject; otherwise the Obj-C code for
 // GCDAsyncSocket will somehow not be able to store a reference to the delegate
 // (it will remain nil and no error will be logged).
-internal class FCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager, HttpRequestReceiver {
+internal class FastCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager, HttpRequestReceiver {
 
     private let _port: UInt16
     private let _timeout: NSTimeInterval = 5
@@ -82,8 +80,4 @@ internal class FCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager, 
     func connectionDidClose(connection: FastCGIConnection) {
         _activeConnections.remove(connection)
     }
-
-//    internal func client(didFinishBuildingResponse response: HttpResponse, forHttpRequest request: HttpRequest) {
-//        request._fcgiContext.connection.sendResponse(httpResponse: response, forRequest: request)
-//    }
 }

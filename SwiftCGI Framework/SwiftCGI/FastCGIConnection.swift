@@ -33,6 +33,8 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
         case AwaitingContentAndPadding = 1
     }
     
+    let timeout: NSTimeInterval = 5
+    
     let manager: ConnectionManager
     let socket: GCDAsyncSocket
     let queue: dispatch_queue_t
@@ -57,11 +59,11 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
     // MARK: FastCGI record processing
     
     private func readNextRecordHeader() {
-        socket.readDataToLength(FCGIHeader.Size, withTimeout: FCGITimeout, tag: ConnectionState.AwaitingHeader.rawValue)
+        socket.readDataToLength(FCGIHeader.Size, withTimeout: timeout, tag: ConnectionState.AwaitingHeader.rawValue)
     }
     
     private func readContent(ofLength length: UInt) {
-        socket.readDataToLength(length, withTimeout: FCGITimeout, tag: ConnectionState.AwaitingContentAndPadding.rawValue)
+        socket.readDataToLength(length, withTimeout: timeout, tag: ConnectionState.AwaitingContentAndPadding.rawValue)
     }
     
     private func handleIncomingRecord(record: FCGIIncomingRecordType, fromSocket socket: GCDAsyncSocket) {
@@ -188,7 +190,7 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
             let header = FCGIHeader(version: FCGIVersion.Version1, type: FCGIRecordType.Stdout, requestId: requestId, contentLength: UInt16(chunk.length), paddingLength: 0)
             let record = FCGIStdOutRequest(header: header, content: chunk)
             
-            self.socket.writeData(record.data(), withTimeout: FCGITimeout, tag: 0)
+            self.socket.writeData(record.data(), withTimeout: timeout, tag: 0)
             
             sent += chunk.length
         }
@@ -197,7 +199,7 @@ internal class FastCGIConnection : NSObject, GCDAsyncSocketDelegate {
         let header = FCGIHeader(version: FCGIVersion.Version1, type: FCGIRecordType.Stdout, requestId: requestId, contentLength: UInt16(emptyData.length), paddingLength: 0)
         let record = FCGIStdOutRequest(header: header, content: emptyData)
         
-        socket.writeData(record.data(), withTimeout: FCGITimeout, tag: 0)
+        socket.writeData(record.data(), withTimeout: timeout, tag: 0)
         
         let header2 = FCGIHeader(version: FCGIVersion.Version1, type: FCGIRecordType.Stdout, requestId: requestId, contentLength: UInt16(FCGIEndRequest.Size-FCGIHeader.Size), paddingLength: 0)
         let record2 = FCGIEndRequest(header: header2, protocolStatus: FCGIProtocolStatus.RequestComplete, applicationStatus: 0)

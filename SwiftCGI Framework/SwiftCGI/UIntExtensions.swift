@@ -41,6 +41,13 @@ extension UInt16 {
         return (msb, lsb)
     }
     
+    func decompose() -> (msb: UInt8, lsb: UInt8) {
+        let msb = UInt8(self & 0xFF)
+        let lsb = UInt8(self >> 8)
+        
+        return (msb: msb, lsb: lsb)
+    }
+    
     func decomposeLittleEndian() -> (LSB, MSB) {
         let littleEndianValue = CFSwapInt16HostToLittle(self)
         let lsb = UInt8(littleEndianValue & 0xFF)
@@ -61,7 +68,16 @@ extension UInt32 {
         
         return (msb, b1, b2, lsb)
     }
-    
+
+    func decompose() -> (msb: UInt8, UInt8, UInt8, lsb: UInt8) {
+        let msb = UInt8(self & 0xFF)
+        let b1 = UInt8((self >> 8) & 0xFF)
+        let b2 = UInt8((self >> 16) & 0xFF)
+        let lsb = UInt8((self >> 24) & 0xFF)
+        
+        return (msb: msb, b1, b2, lsb: lsb)
+    }
+
     func decomposeLittleEndian() -> (LSB, UInt8, UInt8, MSB) {
         let littleEndianValue = CFSwapInt32HostToLittle(self)
         let lsb = UInt8(littleEndianValue & 0xFF)
