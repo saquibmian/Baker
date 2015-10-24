@@ -52,7 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        app = Application(port: 9081, configureRouter: mapRoutes)
+        app = Application(host: "localhost", port: 9081, configureRouter: mapRoutes)
         
         app.use(Logger())
         app.use(Authorizer())

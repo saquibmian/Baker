@@ -43,6 +43,7 @@ protocol HttpRequestReceiverDelegate {
 internal class FastCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManager, HttpRequestReceiver {
 
     private let _port: UInt16
+    private let _host: String
     private let _timeout: NSTimeInterval = 5
 
     private var _activeConnections: Set<FastCGIConnection> = []
@@ -53,10 +54,15 @@ internal class FastCGIServer: NSObject, GCDAsyncSocketDelegate, ConnectionManage
     }()
 
     internal var delegate: HttpRequestReceiverDelegate!
-
-    internal init(port: UInt16) {
+    
+    internal init(host: String, port: UInt16) {
+        self._host = host;
         self._port = port
         _delegateQueue = dispatch_queue_create("SocketAcceptQueue", DISPATCH_QUEUE_SERIAL)
+    }
+    
+    internal convenience init(port: UInt16) {
+        self.init(host: "localhost", port: port);
     }
     
     internal func start() throws {
